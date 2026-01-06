@@ -48,7 +48,7 @@ export class AuthService {
     await user.save();
 
     // 4️⃣ Send OTP email
-    await this.emailService.sendOtpMail(email, otp);
+    // this.emailService.sendOtpMail(email, otp);
 
     return {
       message: 'User registered successfully. OTP sent to email.',
