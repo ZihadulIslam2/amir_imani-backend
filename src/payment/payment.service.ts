@@ -70,6 +70,9 @@ export class PaymentService {
     const session = await this.stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
+      shipping_address_collection: {
+        allowed_countries: ['US', 'CA', 'BD'],
+      },
       line_items: [
         {
           price_data: {
