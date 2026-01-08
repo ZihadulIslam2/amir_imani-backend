@@ -10,7 +10,7 @@ import { CartService } from '../cart/cart.service';
 
 @Injectable()
 export class PaymentService {
-  private stripe: Stripe;
+  private readonly stripe: Stripe;
 
   constructor(
     @InjectQueue('payment-status')
@@ -62,15 +62,9 @@ export class PaymentService {
 
   /* Create Stripe Checkout Session */
   async createStripePayment(dto: CreatePaymentDto) {
-    const successUrl =
-      process.env.STRIPE_CANCEL_URL || 'http://localhost:3000/payment/success';
+    const successUrl = 'https://doundogames.com/payment/success';
     console.log('siccessUrl', successUrl);
-    const cancelUrl =
-      dto.cancelUrl ||
-      process.env.STRIPE_CANCEL_URL ||
-      'http://localhost:3000/payment/cancel';
-
-    // console.log(1);
+    const cancelUrl = 'https://doundogames.com/payment/cancel';
 
     // Create a Checkout Session so we can send the hosted payment page URL back to the client
     const session = await this.stripe.checkout.sessions.create({
@@ -92,7 +86,6 @@ export class PaymentService {
         userId: dto.userId,
       },
     });
-    // console.log(2);
 
     const payment = await this.paymentModel.create({
       userId: dto.userId,
