@@ -9,6 +9,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { PaymentRecord, PaymentDocument } from '../payment/paymentRecord';
 import { Cart, CartDocument } from '../cart/cart.schema';
+import { CartService } from '../cart/cart.service';
 
 @Injectable()
 export class ProductsService {
@@ -19,6 +20,7 @@ export class ProductsService {
     private readonly paymentModel: Model<PaymentDocument>,
     @InjectModel(Cart.name) private readonly cartModel: Model<CartDocument>,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly cartService: CartService,
     @InjectQueue('product-notification')
     private readonly productNotificationQueue: Queue,
   ) {}
@@ -158,6 +160,9 @@ export class ProductsService {
     if (!result) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
+
+    // Remove product from all carts
+    await this.cartService.deleteProductFromAllCarts(id);
 
     return { message: 'Product deleted successfully' };
   }

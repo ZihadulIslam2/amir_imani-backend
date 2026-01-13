@@ -156,4 +156,21 @@ export class CartService {
       throw new BadRequestException('Failed to delete product from cart');
     }
   }
+
+  async deleteProductFromAllCarts(productId: string): Promise<void> {
+    try {
+      await this.cartModel.updateMany(
+        {},
+        {
+          $pull: {
+            productIds: {
+              productId: new Types.ObjectId(productId),
+            },
+          },
+        },
+      );
+    } catch (error) {
+      throw new BadRequestException('Failed to remove product from carts');
+    }
+  }
 }
