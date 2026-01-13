@@ -47,27 +47,27 @@ export class ProductsService {
     });
     const savedProduct = await newProduct.save();
 
-    // Add job to queue to send notifications to all subscribers
-    await this.productNotificationQueue.add(
-      'notify-subscribers',
-      {
-        productId: savedProduct._id.toString(),
-        productName: savedProduct.productName,
-        price: savedProduct.price,
-        feature: savedProduct.feature,
-        description: savedProduct.description,
-        imgs: savedProduct.imgs,
-        productType: savedProduct.productType,
-      },
-      {
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 2000,
-        },
-        removeOnComplete: true,
-      },
-    );
+    // // Add job to queue to send notifications to all subscribers
+    // await this.productNotificationQueue.add(
+    //   'notify-subscribers',
+    //   {
+    //     productId: savedProduct._id.toString(),
+    //     productName: savedProduct.productName,
+    //     price: savedProduct.price,
+    //     feature: savedProduct.feature,
+    //     description: savedProduct.description,
+    //     imgs: savedProduct.imgs,
+    //     productType: savedProduct.productType,
+    //   },
+    //   {
+    //     attempts: 3,
+    //     backoff: {
+    //       type: 'exponential',
+    //       delay: 2000,
+    //     },
+    //     removeOnComplete: true,
+    //   },
+    // );
 
     return savedProduct;
   }
