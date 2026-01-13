@@ -71,7 +71,7 @@ export class PaymentService {
       mode: 'payment',
       payment_method_types: ['card'],
       shipping_address_collection: {
-        allowed_countries: ['US', 'CA', 'BD'],
+        allowed_countries: ['US', 'CA'],
       },
       line_items: [
         {
