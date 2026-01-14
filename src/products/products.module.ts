@@ -5,6 +5,7 @@ import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
 import { Product, ProductSchema } from './product.schema';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+import { CartModule } from '../cart/cart.module';
 import { Cart, CartSchema } from '../cart/cart.schema';
 import { PaymentRecord, PaymentSchema } from '../payment/paymentRecord';
 
@@ -16,6 +17,7 @@ import { PaymentRecord, PaymentSchema } from '../payment/paymentRecord';
       { name: PaymentRecord.name, schema: PaymentSchema },
     ]),
     CloudinaryModule,
+    CartModule,
     BullModule.registerQueue({
       name: 'product-notification',
     }),
