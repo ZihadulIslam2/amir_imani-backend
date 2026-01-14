@@ -329,4 +329,31 @@ export class EmailService {
       throw error;
     }
   }
+
+  async sendPaymentConfirmationEmail(
+    email: string,
+    firstName: string,
+    amount: number,
+    paymentId: string,
+    html: string,
+  ) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+      await this.transporter.sendMail({
+        from: `"Dound Games" <${process.env.MAIL_USER}>`,
+        to: email,
+        subject: 'Payment Confirmation - Your Order is Confirmed',
+        html,
+      });
+      console.log(`Payment confirmation email sent successfully to ${email}`);
+    } catch (error) {
+      console.error(
+        `Failed to send payment confirmation email to ${email}:`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        'Failed to send payment confirmation email',
+      );
+    }
+  }
 }
