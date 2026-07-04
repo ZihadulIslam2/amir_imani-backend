@@ -3,7 +3,9 @@ import { ValidationPipe } from '@nestjs/common'; // 👈 MUST ADD THIS
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+  });
 
   // ✅ Enable CORS with restricted origins
   app.enableCors({

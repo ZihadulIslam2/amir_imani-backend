@@ -14,6 +14,7 @@ import { CartModule } from './cart/cart.module';
 import { BullModule } from '@nestjs/bullmq';
 import { BlogModule } from './blog/blog.module';
 import { QueuesModule } from './queues/queues.module';
+import { ShippingModule } from './shipping/shipping.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { QueuesModule } from './queues/queues.module';
     CartModule,
     PaymentModule,
     BlogModule,
+    ShippingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -473,16 +473,16 @@
       "response": []
     },
     {
-      "name": "Create Stripe Payment",
+      "name": "Create Payment Intent",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "if (pm.response.code === 200 || pm.response.code === 201) {",
+              "if (pm.response.code === 201) {",
               "    var jsonData = pm.response.json();",
-              "    if (jsonData.data && jsonData.data.id) {",
-              "        pm.collectionVariables.set('payment_id', jsonData.data.id);",
+              "    if (jsonData.data && jsonData.data.paymentId) {",
+              "        pm.collectionVariables.set('payment_id', jsonData.data.paymentId);",
               "    }",
               "}"
             ],
@@ -500,16 +500,59 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"totalAmount\": 15497,\n  \"paymentType\": \"fullReport\",\n  \"seasonId\": \"507f1f77bcf86cd799439015\",\n  \"successUrl\": \"http://localhost:3000/payment-success\",\n  \"cancelUrl\": \"http://localhost:3000/payment-cancel\",\n  \"description\": \"Payment for full report and products\"\n}"
+          "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"shippingAddress\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"province\": \"NY\",\n    \"postalCode\": \"10001\",\n    \"country\": \"US\"\n  }\n}"
         },
         "url": {
-          "raw": "{{base_url}}/payments/stripe/create",
+          "raw": "{{base_url}}/payments/intent",
           "host": ["{{base_url}}"],
-          "path": ["payments", "stripe", "create"]
+          "path": ["payments", "intent"]
         },
-        "description": "Create a Stripe payment session"
+        "description": "Create a Stripe PaymentIntent for on-site card payment. Currency is auto-detected from shipping country (CA→CAD, US→USD) or client IP. Cart must exist for this user. Returns clientSecret for the frontend to complete payment with Stripe Elements."
       },
-      "response": []
+      "response": [
+        {
+          "name": "Payment Intent Created",
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"statusCode\": 201,\n  \"success\": true,\n  \"message\": \"Payment intent created successfully\",\n  \"data\": {\n    \"clientSecret\": \"pi_3Rabc123_secret_xyz456\",\n    \"paymentId\": \"507f1f77bcf86cd799439011\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Stripe Webhook",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "stripe-signature",
+            "value": "t=12345678,v1=abc123..."
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"type\": \"payment_intent.succeeded\", \"data\": { \"object\": { \"id\": \"pi_xxx\", \"amount\": 10000, \"currency\": \"usd\" } } }"
+        },
+        "url": {
+          "raw": "{{base_url}}/payments/webhook",
+          "host": ["{{base_url}}"],
+          "path": ["payments", "webhook"]
+        },
+        "description": "Stripe webhook endpoint — handles payment_intent.succeeded and payment_intent.payment_failed events. Signature verification required."
+      },
+      "response": [
+        {
+          "name": "Webhook Acknowledged",
+          "status": "OK",
+          "code": 200,
+          "body": "{ \"received\": true }"
+        }
+      ]
     },
     {
       "name": "Get All Payments",
