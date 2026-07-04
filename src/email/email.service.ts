@@ -27,6 +27,27 @@ export class EmailService {
     });
   }
 
+  async sendPasswordMail(to: string, password: string) {
+    try {
+      await this.transporter.sendMail({
+        from: `"No Reply" <${process.env.MAIL_USER}>`,
+        to,
+        subject: 'Your Account Password',
+        html: `
+          <div>
+            <h3>Welcome! Your account has been created.</h3>
+            <p>Here is your auto-generated password:</p>
+            <p style="font-size: 20px; font-weight: bold;">${password}</p>
+            <p>Please change your password after logging in for security purposes.</p>
+          </div>
+        `,
+      });
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException('Failed to send password email');
+    }
+  }
+
   async sendOtpMail(to: string, otp: string) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access

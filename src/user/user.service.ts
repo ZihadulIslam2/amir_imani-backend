@@ -12,10 +12,13 @@ export class UserService {
   ) {}
 
   async create(data: Partial<User>): Promise<UserDocument> {
-    if (!data.password) throw new Error('Password is required');
-
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    const user = new this.userModel({ ...data, password: hashedPassword });
+    const hashedPassword = data.password
+      ? await bcrypt.hash(data.password, 10)
+      : undefined;
+    const user = new this.userModel({
+      ...data,
+      ...(hashedPassword && { password: hashedPassword }),
+    });
     return user.save(); // ✅ returns a full Mongoose Document with toObject()
   }
 

@@ -39,6 +39,42 @@
   ],
   "item": [
     {
+      "name": "Register (Signup)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"address\": \"123 Main St\",\n  \"phoneNum\": \"+1234567890\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/auth/register",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "register"]
+        },
+        "description": "Register a new user. Password is OPTIONAL — if omitted, a random password is auto-generated and sent to the user's email. Only email is required."
+      },
+      "response": [
+        {
+          "name": "Auto-generated password response",
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"statusCode\": 201,\n  \"success\": true,\n  \"message\": \"User registered successfully\",\n  \"data\": {\n    \"message\": \"User registered successfully. Password sent to your email.\",\n    \"userId\": \"507f1f77bcf86cd799439011\"\n  }\n}"
+        }
+      ]
+    },
+    {
       "name": "Create Product",
       "event": [
         {
