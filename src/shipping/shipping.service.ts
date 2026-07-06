@@ -13,7 +13,10 @@ const SHIPPING_RULES: Record<string, ShippingRule> = {
 
 @Injectable()
 export class ShippingService {
-  calculateShipping(country: string, subtotalUsd: number): {
+  calculateShipping(
+    country: string,
+    subtotalUsd: number,
+  ): {
     cost: number;
     currency: 'usd' | 'cad';
   } {
@@ -24,13 +27,9 @@ export class ShippingService {
     }
 
     // Convert subtotal to the rule's currency for threshold comparison
-    const exchangeRate = parseFloat(
-      process.env.CAD_EXCHANGE_RATE || '1.44',
-    );
+    const exchangeRate = parseFloat(process.env.CAD_EXCHANGE_RATE || '1.44');
     const subtotalInRuleCurrency =
-      rule.currency === 'cad'
-        ? subtotalUsd * exchangeRate
-        : subtotalUsd;
+      rule.currency === 'cad' ? subtotalUsd * exchangeRate : subtotalUsd;
 
     if (subtotalInRuleCurrency >= rule.freeThreshold) {
       return { cost: 0, currency: rule.currency };

@@ -5,7 +5,10 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { FortuneHistory, FortuneHistoryDocument } from './fortune-telling.schema';
+import {
+  FortuneHistory,
+  FortuneHistoryDocument,
+} from './fortune-telling.schema';
 import * as fortunesData from './data/fortunes.json';
 
 interface FortuneEntry {
@@ -33,7 +36,10 @@ export class FortuneTellingService {
       .join(',');
   }
 
-  async reveal(userId: string, symbols: string[]): Promise<{ fortune: string; symbols: string[] }> {
+  async reveal(
+    userId: string,
+    symbols: string[],
+  ): Promise<{ fortune: string; symbols: string[] }> {
     const normalized = symbols.map((s) => s.trim().toUpperCase());
 
     const today = new Date();
@@ -49,14 +55,18 @@ export class FortuneTellingService {
       .exec();
 
     if (existingToday) {
-      throw new ForbiddenException('You have already received your fortune today. Come back tomorrow.');
+      throw new ForbiddenException(
+        'You have already received your fortune today. Come back tomorrow.',
+      );
     }
 
     const key = this.normalizeSymbols(normalized);
     const entry = fortunes[key];
 
     if (!entry) {
-      throw new BadRequestException('No fortune found for the given combination of symbols.');
+      throw new BadRequestException(
+        'No fortune found for the given combination of symbols.',
+      );
     }
 
     const history = new this.fortuneHistoryModel({

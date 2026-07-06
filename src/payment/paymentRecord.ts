@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type PaymentDocument = PaymentRecord & Document;
 
@@ -76,6 +76,12 @@ export class PaymentRecord {
 
   @Prop({ type: ShippingAddress })
   shippingAddress: ShippingAddress;
+
+  @Prop({ type: Types.ObjectId, ref: 'Coupon' })
+  couponId?: Types.ObjectId;
+
+  @Prop({ default: 0 })
+  discountAmount: number;
 
   @Prop({ default: 'pending' })
   orderStatus: string;
