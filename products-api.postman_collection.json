@@ -35,6 +35,11 @@
       "key": "payment_id",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -595,6 +600,89 @@
         "description": "Get a specific payment by ID"
       },
       "response": []
+    },
+    {
+      "name": "Fortune Telling",
+      "item": [
+        {
+          "name": "Reveal Fortune",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbols\": [\"SHAMAN\", \"ENKI\", \"HERA\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/fortune-telling/reveal",
+              "host": ["{{base_url}}"],
+              "path": ["fortune-telling", "reveal"]
+            },
+            "description": "Submit 3 card symbols to reveal your fortune. Requires JWT auth. Limited to one fortune per user per day. Available symbols: SHAMAN, ENKI, HERA, MITRA, AHURA, ASGARD, TITAN, LAOZI, SETNA, ARES, SHIVA, GAIA, ZIGI"
+          },
+          "response": [
+            {
+              "name": "Fortune Revealed",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Fortune revealed successfully\",\n  \"data\": {\n    \"fortune\": \"Fortune No. 1...\",\n    \"symbols\": [\"SHAMAN\", \"ENKI\", \"HERA\"]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get My Fortune History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fortune-telling/my-history",
+              "host": ["{{base_url}}"],
+              "path": ["fortune-telling", "my-history"]
+            },
+            "description": "Get the authenticated user's fortune reading history"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Fortune History (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/fortune-telling/admin/history",
+              "host": ["{{base_url}}"],
+              "path": ["fortune-telling", "admin", "history"]
+            },
+            "description": "Get all users' fortune history (admin-only). Requires admin role."
+          },
+          "response": []
+        }
+      ]
     }
   ]
 }

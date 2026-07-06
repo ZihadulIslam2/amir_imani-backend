@@ -15,6 +15,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { BlogModule } from './blog/blog.module';
 import { QueuesModule } from './queues/queues.module';
 import { ShippingModule } from './shipping/shipping.module';
+import { FortuneTellingModule } from './fortune-telling/fortune-telling.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { ShippingModule } from './shipping/shipping.module';
     PaymentModule,
     BlogModule,
     ShippingModule,
+    FortuneTellingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
