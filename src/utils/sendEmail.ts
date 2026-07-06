@@ -53,7 +53,6 @@ export const sendEmail = async (
   // In dev with Ethereal, log preview URL to help debugging
   const previewUrl = nodemailer.getTestMessageUrl(info);
   if (previewUrl) {
-    // eslint-disable-next-line no-console
     console.log('Email preview URL:', previewUrl);
   }
 };

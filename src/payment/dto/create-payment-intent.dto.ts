@@ -35,4 +35,8 @@ export class CreatePaymentIntentDto {
   @IsOptional()
   @IsString()
   currency?: 'usd' | 'cad';
+
+  @IsOptional()
+  @IsString()
+  couponCode?: string;
 }

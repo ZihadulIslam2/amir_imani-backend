@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import Stripe from 'stripe';
 import * as geoip from 'geoip-lite';
 import { PaymentRecord, PaymentDocument } from './paymentRecord';
@@ -9,6 +9,7 @@ import { CartService } from '../cart/cart.service';
 import { ShippingService } from '../shipping/shipping.service';
 import { EmailService } from '../email/email.service';
 import { User } from '../user/user.schema';
+import { CouponService } from '../coupons/coupon.service';
 
 @Injectable()
 export class PaymentService {
@@ -24,6 +25,7 @@ export class PaymentService {
     private readonly cartService: CartService,
     private readonly shippingService: ShippingService,
     private readonly emailService: EmailService,
+    private readonly couponService: CouponService,
   ) {
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
@@ -111,10 +113,28 @@ export class PaymentService {
       throw new BadRequestException('No valid products in cart');
     }
 
-    // 4. Calculate shipping cost
-    const exchangeRate = parseFloat(
-      process.env.CAD_EXCHANGE_RATE || '1.44',
-    );
+    // 4. Apply coupon if provided
+    let couponId: Types.ObjectId | undefined;
+    let discountAmount = 0;
+
+    if (dto.couponCode) {
+      const validation = await this.couponService.validateCoupon({
+        code: dto.couponCode,
+        userId: dto.userId,
+        cartTotal: subtotalUsd,
+      });
+
+      if (!validation.valid) {
+        throw new BadRequestException(validation.message);
+      }
+
+      discountAmount = validation.data!.discountAmount;
+      couponId = new Types.ObjectId(validation.data!.couponId);
+      subtotalUsd = Math.max(0, subtotalUsd - discountAmount);
+    }
+
+    // 5. Calculate shipping cost
+    const exchangeRate = parseFloat(process.env.CAD_EXCHANGE_RATE || '1.44');
 
     const shipping = this.shippingService.calculateShipping(
       country,
@@ -134,9 +154,7 @@ export class PaymentService {
           ? shippingCost * exchangeRate
           : shippingCost / exchangeRate;
 
-    const total = Math.round(
-      (subtotalInCurrency + shippingInCurrency) * 100,
-    );
+    const total = Math.round((subtotalInCurrency + shippingInCurrency) * 100);
 
     // 6. Create Stripe PaymentIntent
     const paymentIntent = await this.stripe.paymentIntents.create({
@@ -171,13 +189,21 @@ export class PaymentService {
       shippingCost: shippingInCurrency,
       items,
       shippingAddress: dto.shippingAddress,
+      couponId,
+      discountAmount,
       paymentStatus: 'pending',
       orderStatus: 'pending',
     });
 
+    // 8. Return coupon info for client
+    const couponInfo = couponId
+      ? { couponId: couponId.toString(), discountAmount }
+      : undefined;
+
     return {
       clientSecret: paymentIntent.client_secret,
       paymentId: payment._id,
+      ...(couponInfo && { coupon: couponInfo }),
     };
   }
 
@@ -201,12 +227,12 @@ export class PaymentService {
     }
 
     if (event.type === 'payment_intent.succeeded') {
-      const intent = event.data.object as Stripe.PaymentIntent;
+      const intent = event.data.object;
       await this.handlePaymentSuccess(intent);
     }
 
     if (event.type === 'payment_intent.payment_failed') {
-      const intent = event.data.object as Stripe.PaymentIntent;
+      const intent = event.data.object;
       await this.handlePaymentFailure(intent);
     }
   }
@@ -221,6 +247,20 @@ export class PaymentService {
     payment.paymentStatus = 'paid';
     payment.orderStatus = 'processing';
     await payment.save();
+
+    // Record coupon usage if applied
+    if (payment.couponId && payment.discountAmount > 0) {
+      try {
+        await this.couponService.recordUsage(
+          payment.couponId.toString(),
+          payment.userId,
+          payment._id.toString(),
+          payment.discountAmount,
+        );
+      } catch (error) {
+        console.error('Failed to record coupon usage:', error);
+      }
+    }
 
     // Send confirmation email
     try {

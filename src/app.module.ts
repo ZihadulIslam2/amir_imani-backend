@@ -16,6 +16,7 @@ import { BlogModule } from './blog/blog.module';
 import { QueuesModule } from './queues/queues.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { FortuneTellingModule } from './fortune-telling/fortune-telling.module';
+import { CouponModule } from './coupons/coupon.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { FortuneTellingModule } from './fortune-telling/fortune-telling.module';
     BlogModule,
     ShippingModule,
     FortuneTellingModule,
+    CouponModule,
   ],
   controllers: [AppController],
   providers: [AppService],

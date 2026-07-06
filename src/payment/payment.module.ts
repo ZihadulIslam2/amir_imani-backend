@@ -7,6 +7,7 @@ import { CartModule } from '../cart/cart.module';
 import { EmailModule } from '../email/email.module';
 import { UserModule } from '../user/user.module';
 import { ShippingModule } from '../shipping/shipping.module';
+import { CouponModule } from '../coupons/coupon.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ShippingModule } from '../shipping/shipping.module';
     EmailModule,
     UserModule,
     ShippingModule,
+    CouponModule,
   ],
   controllers: [PaymentController],
   providers: [PaymentService],

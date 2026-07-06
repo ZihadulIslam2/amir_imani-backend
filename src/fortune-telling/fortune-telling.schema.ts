@@ -15,4 +15,5 @@ export class FortuneHistory {
   fortune: string;
 }
 
-export const FortuneHistorySchema = SchemaFactory.createForClass(FortuneHistory);
+export const FortuneHistorySchema =
+  SchemaFactory.createForClass(FortuneHistory);

@@ -29,10 +29,7 @@ export class PaymentController {
       (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
       req.socket.remoteAddress;
 
-    const result = await this.paymentService.createPaymentIntent(
-      dto,
-      clientIp,
-    );
+    const result = await this.paymentService.createPaymentIntent(dto, clientIp);
 
     sendResponse(res, {
       statusCode: 201,
