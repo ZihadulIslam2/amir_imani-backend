@@ -9,13 +9,19 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 
+@ApiTags('Users')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get a user by ID' })
+  @ApiParam({ name: 'id', description: 'The MongoDB user ID', example: '60d21b4667d0d8992e610c85' })
+  @ApiResponse({ status: 200, description: 'User retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async getUserById(@Param('id') id: string) {
     const user = await this.userService.findById(id);
     if (!user) {
@@ -35,6 +41,10 @@ export class UserController {
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update user information' })
+  @ApiParam({ name: 'id', description: 'The MongoDB user ID', example: '60d21b4667d0d8992e610c85' })
+  @ApiResponse({ status: 200, description: 'User updated successfully.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async updateUser(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,

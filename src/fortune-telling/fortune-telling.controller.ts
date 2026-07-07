@@ -14,13 +14,19 @@ import { sendResponse } from '../common/utils/sendResponse';
 import { FortuneTellingService } from './fortune-telling.service';
 import { RevealFortuneDto } from './dto/reveal-fortune.dto';
 import type { Response, Request } from 'express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('Fortune Telling')
 @Controller('fortune-telling')
 export class FortuneTellingController {
   constructor(private readonly fortuneTellingService: FortuneTellingService) {}
 
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Post('reveal')
+  @ApiOperation({ summary: 'Reveal a new fortune based on 3 selected symbols' })
+  @ApiResponse({ status: 200, description: 'Fortune revealed successfully.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async reveal(
     @Body() dto: RevealFortuneDto,
     @Req() req: Request,
@@ -37,7 +43,11 @@ export class FortuneTellingController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Get('my-history')
+  @ApiOperation({ summary: 'Retrieve logged-in user’s fortune telling history' })
+  @ApiResponse({ status: 200, description: 'Fortune history retrieved successfully.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getMyHistory(@Req() req: Request, @Res() res: Response) {
     const userId = (req as any).user?.userId;
     const history = await this.fortuneTellingService.getUserHistory(userId);
@@ -51,7 +61,11 @@ export class FortuneTellingController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Role('admin')
+  @ApiBearerAuth('JWT-auth')
   @Get('admin/history')
+  @ApiOperation({ summary: 'Retrieve all fortune telling history (Admin only)' })
+  @ApiResponse({ status: 200, description: 'All fortune history retrieved successfully.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Requires admin role.' })
   async getAllHistory(@Res() res: Response) {
     const history = await this.fortuneTellingService.getAllHistory();
     sendResponse(res, {
