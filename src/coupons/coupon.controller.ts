@@ -19,14 +19,20 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Role } from '../auth/decorators/role.decorator';
 import { sendResponse } from '../common/utils/sendResponse';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('Coupons')
 @Controller('coupons')
 export class CouponController {
   constructor(private readonly couponService: CouponService) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Role('admin')
+  @ApiBearerAuth('JWT-auth')
   @Post()
+  @ApiOperation({ summary: 'Create a new coupon (Admin only)' })
+  @ApiResponse({ status: 201, description: 'Coupon created successfully.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Requires admin role.' })
   async createCoupon(@Body() dto: CreateCouponDto, @Res() res: Response) {
     const coupon = await this.couponService.createCoupon(dto);
     sendResponse(res, {
@@ -39,7 +45,12 @@ export class CouponController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Role('admin')
+  @ApiBearerAuth('JWT-auth')
   @Put(':id')
+  @ApiOperation({ summary: 'Update an existing coupon by ID (Admin only)' })
+  @ApiParam({ name: 'id', description: 'The MongoDB coupon ID', example: '60d21b4667d0d8992e610c85' })
+  @ApiResponse({ status: 200, description: 'Coupon updated successfully.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Requires admin role.' })
   async updateCoupon(
     @Param('id') id: string,
     @Body() dto: UpdateCouponDto,
@@ -56,7 +67,12 @@ export class CouponController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Role('admin')
+  @ApiBearerAuth('JWT-auth')
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete a coupon by ID (Admin only)' })
+  @ApiParam({ name: 'id', description: 'The MongoDB coupon ID', example: '60d21b4667d0d8992e610c85' })
+  @ApiResponse({ status: 200, description: 'Coupon deleted successfully.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Requires admin role.' })
   async deleteCoupon(@Param('id') id: string, @Res() res: Response) {
     const result = await this.couponService.deleteCoupon(id);
     sendResponse(res, {
@@ -68,7 +84,12 @@ export class CouponController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Role('admin')
+  @ApiBearerAuth('JWT-auth')
   @Get()
+  @ApiOperation({ summary: 'Retrieve list of all coupons (Admin only)' })
+  @ApiQuery({ name: 'status', description: 'Filter by active/expired/all status', enum: ['active', 'expired', 'all'], required: false })
+  @ApiResponse({ status: 200, description: 'Coupons retrieved successfully.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Requires admin role.' })
   async getAllCoupons(@Res() res: Response, @Query('status') status?: string) {
     const validStatuses = ['active', 'expired', 'all'] as const;
     const filter = validStatuses.includes(
@@ -87,7 +108,11 @@ export class CouponController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Role('admin')
+  @ApiBearerAuth('JWT-auth')
   @Get('analytics')
+  @ApiOperation({ summary: 'Retrieve analytics summary for coupons usage (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Analytics retrieved successfully.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Requires admin role.' })
   async getAnalytics(@Res() res: Response) {
     const analytics = await this.couponService.getCouponAnalytics();
     sendResponse(res, {
@@ -100,7 +125,12 @@ export class CouponController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Role('admin')
+  @ApiBearerAuth('JWT-auth')
   @Get(':id')
+  @ApiOperation({ summary: 'Retrieve details of a coupon by ID (Admin only)' })
+  @ApiParam({ name: 'id', description: 'The MongoDB coupon ID', example: '60d21b4667d0d8992e610c85' })
+  @ApiResponse({ status: 200, description: 'Coupon retrieved successfully.' })
+  @ApiResponse({ status: 403, description: 'Forbidden. Requires admin role.' })
   async getCouponById(@Param('id') id: string, @Res() res: Response) {
     const coupon = await this.couponService.getCouponById(id);
     sendResponse(res, {
@@ -112,6 +142,8 @@ export class CouponController {
   }
 
   @Post('validate')
+  @ApiOperation({ summary: 'Validate a coupon code against a user cart total' })
+  @ApiResponse({ status: 200, description: 'Validation query processed. Check response data for validity status.' })
   async validateCoupon(@Body() dto: ValidateCouponDto, @Res() res: Response) {
     const result = await this.couponService.validateCoupon(dto);
     sendResponse(res, {
@@ -123,6 +155,8 @@ export class CouponController {
   }
 
   @Post('apply')
+  @ApiOperation({ summary: 'Apply a coupon to a purchase and calculate discount' })
+  @ApiResponse({ status: 200, description: 'Coupon applied successfully. Returns discount details.' })
   async applyCoupon(@Body() dto: ValidateCouponDto, @Res() res: Response) {
     const result = await this.couponService.applyCoupon(dto);
     sendResponse(res, {

@@ -13,13 +13,18 @@ import { Public } from '../common/decorators/public.decorator';
 import { PaymentService } from './payment.service';
 import { CreatePaymentIntentDto } from './dto/create-payment-intent.dto';
 import { sendResponse } from '../common/utils/sendResponse';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('Payments')
 @Controller('payments')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
   @Public()
   @Post('intent')
+  @ApiOperation({ summary: 'Create a new Stripe payment intent' })
+  @ApiResponse({ status: 201, description: 'Payment intent created successfully.' })
+  @ApiResponse({ status: 400, description: 'Invalid payload.' })
   async createPaymentIntent(
     @Body() dto: CreatePaymentIntentDto,
     @Req() req: Request,
@@ -41,6 +46,8 @@ export class PaymentController {
 
   @Public()
   @Post('webhook')
+  @ApiOperation({ summary: 'Stripe Webhook handler for processing events asynchronously' })
+  @ApiResponse({ status: 200, description: 'Webhook received and processed.' })
   async handleWebhook(
     @Req() req: Request,
     @Res() res: Response,
@@ -55,6 +62,8 @@ export class PaymentController {
 
   @Public()
   @Get()
+  @ApiOperation({ summary: 'Retrieve list of all payment records' })
+  @ApiResponse({ status: 200, description: 'Payments retrieved successfully.' })
   async getAllPayments(@Res() res: Response) {
     const payments = await this.paymentService.getAllPayments();
 
@@ -66,7 +75,11 @@ export class PaymentController {
     });
   }
 
+  @ApiBearerAuth('JWT-auth')
   @Get('user/:userId')
+  @ApiOperation({ summary: 'Get all payment records for a specific user' })
+  @ApiParam({ name: 'userId', description: 'The MongoDB user ID', example: '60d21b4667d0d8992e610c85' })
+  @ApiResponse({ status: 200, description: 'User payments retrieved successfully.' })
   async getPaymentsByUser(
     @Param('userId') userId: string,
     @Res() res: Response,
@@ -81,7 +94,12 @@ export class PaymentController {
     });
   }
 
+  @ApiBearerAuth('JWT-auth')
   @Get(':id')
+  @ApiOperation({ summary: 'Retrieve details of a single payment record' })
+  @ApiParam({ name: 'id', description: 'The MongoDB payment record ID', example: '60d21b4667d0d8992e610c85' })
+  @ApiResponse({ status: 200, description: 'Payment retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Payment record not found.' })
   async getPayment(@Param('id') id: string, @Res() res: Response) {
     const payment = await this.paymentService.getPaymentById(id);
 

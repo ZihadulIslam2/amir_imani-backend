@@ -1,6 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common'; // 👈 MUST ADD THIS
 import { AppModule } from './app.module';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { apiReference } from '@scalar/nestjs-api-reference';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -28,6 +30,43 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true, // Strips non-DTO properties
       transform: true, // Converts payloads to DTO instances
+    }),
+  );
+
+  // ✅ Scalar API Documentation Setup
+  const config = new DocumentBuilder()
+    .setTitle('Amir Imani API')
+    .setDescription('Full API reference for the Amir Imani e-commerce platform')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth', // This name matches the one used in @ApiBearerAuth('JWT-auth')
+    )
+    .addServer('http://localhost:5000', 'Local Development Server')
+    .addServer('https://api.domain.co', 'Production Server')
+    .addServer('/', 'Relative path Server')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+
+  app.getHttpAdapter().get('/api-docs-json', (req, res) => {
+    res.json(document);
+  });
+
+  app.use(
+    '/api-docs',
+    apiReference({
+      theme: 'purple',
+      spec: {
+        content: document,
+      },
     }),
   );
 
