@@ -13,7 +13,7 @@ import { Public } from '../common/decorators/public.decorator';
 import { PaymentService } from './payment.service';
 import { CreatePaymentIntentDto } from './dto/create-payment-intent.dto';
 import { sendResponse } from '../common/utils/sendResponse';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -23,7 +23,8 @@ export class PaymentController {
   @Public()
   @Post('intent')
   @ApiOperation({ summary: 'Create a new Stripe payment intent' })
-  @ApiResponse({ status: 201, description: 'Payment intent created successfully.' })
+  @ApiBody({ type: CreatePaymentIntentDto, description: 'Guest checkout example (omit userId, provide email + items). For registered users, provide userId and omit email/items (cart is read from DB).', examples: { 'guest': { summary: 'Guest checkout', value: { email: 'guest@example.com', firstName: 'Jane', lastName: 'Doe', shippingAddress: { street: '123 Main St', city: 'Toronto', province: 'ON', postalCode: 'M5V 2T6', country: 'Canada' }, items: [{ productId: '60d21b4667d0d8992e610c85', quantity: 2, color: 'gold', size: 'm' }], currency: 'cad', couponCode: 'SUMMER20' } }, 'registered': { summary: 'Registered user (cart-based)', value: { userId: '664f1a2b3c4d5e6f7a8b9c0d', shippingAddress: { street: '123 Main St', city: 'Toronto', province: 'ON', postalCode: 'M5V 2T6', country: 'Canada' }, currency: 'usd', couponCode: 'WELCOME10' } } } })
+  @ApiResponse({ status: 201, description: 'Payment intent created successfully.', schema: { example: { statusCode: 201, success: true, message: 'Payment intent created successfully', data: { clientSecret: 'pi_3R7sP9LkdIwJn9wI1xH3zJ9A_secret_o4BKL3cT8R7sP9LkdIwJn9wI', paymentId: '664f1a2b3c4d5e6f7a8b9c0d', coupon: { couponId: '664f1a2b3c4d5e6f7a8b9c0e', discountAmount: 10.00 } } } } })
   @ApiResponse({ status: 400, description: 'Invalid payload.' })
   async createPaymentIntent(
     @Body() dto: CreatePaymentIntentDto,

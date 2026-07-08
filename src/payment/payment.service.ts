@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { randomBytes } from 'crypto';
 import Stripe from 'stripe';
 import * as geoip from 'geoip-lite';
 import { PaymentRecord, PaymentDocument } from './paymentRecord';
@@ -8,8 +9,9 @@ import { CreatePaymentIntentDto } from './dto/create-payment-intent.dto';
 import { CartService } from '../cart/cart.service';
 import { ShippingService } from '../shipping/shipping.service';
 import { EmailService } from '../email/email.service';
-import { User } from '../user/user.schema';
+import { UserService } from '../user/user.service';
 import { CouponService } from '../coupons/coupon.service';
+import { Product, ProductDocument } from '../products/product.schema';
 
 @Injectable()
 export class PaymentService {
@@ -19,13 +21,14 @@ export class PaymentService {
     @InjectModel(PaymentRecord.name)
     private readonly paymentModel: Model<PaymentDocument>,
 
-    @InjectModel(User.name)
-    private readonly userModel: Model<User>,
+    @InjectModel(Product.name)
+    private readonly productModel: Model<ProductDocument>,
 
     private readonly cartService: CartService,
     private readonly shippingService: ShippingService,
     private readonly emailService: EmailService,
     private readonly couponService: CouponService,
+    private readonly userService: UserService,
   ) {
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
@@ -41,16 +44,103 @@ export class PaymentService {
   }
 
   async createPaymentIntent(dto: CreatePaymentIntentDto, clientIp?: string) {
-    // 1. Fetch the user's cart with populated products
-    let cart;
-    try {
-      cart = await this.cartService.getCartByUserId(dto.userId);
-    } catch {
-      throw new BadRequestException('Cart not found');
+    // --- STEP 0: Auto-register guest user ---
+    if (!dto.userId) {
+      if (!dto.email) {
+        throw new BadRequestException('Email is required for guest checkout');
+      }
+      let user = await this.userService.findByEmail(dto.email);
+      if (!user) {
+        const password = randomBytes(6).toString('hex');
+        user = await this.userService.create({
+          firstName: dto.firstName || 'Guest',
+          lastName: dto.lastName || '',
+          email: dto.email,
+          password,
+        });
+        await this.emailService.sendPasswordMail(dto.email, password);
+      }
+      dto.userId = (user as unknown as { _id: string })._id.toString();
     }
 
-    if (!cart.productIds || cart.productIds.length === 0) {
-      throw new BadRequestException('Cart is empty');
+    // --- STEP 1: Get items (inline or from DB cart) ---
+    const items: Array<{
+      productId: string;
+      productName: string;
+      price: number;
+      quantity: number;
+      color?: string;
+      size?: string;
+    }> = [];
+
+    let subtotalUsd = 0;
+    let cartId: string;
+
+    if (dto.items && dto.items.length > 0) {
+      // Inline items flow: look up product prices, create cart record
+      for (const item of dto.items) {
+        const product = await this.productModel.findById(item.productId);
+        if (!product || !product.price) continue;
+
+        items.push({
+          productId: product._id.toString(),
+          productName: product.productName,
+          price: product.price,
+          quantity: item.quantity,
+          color: item.color,
+          size: item.size,
+        });
+
+        subtotalUsd += product.price * item.quantity;
+      }
+
+      if (items.length === 0) {
+        throw new BadRequestException('No valid products in cart');
+      }
+
+      const cart = await this.cartService.createCart({
+        userId: dto.userId,
+        productIds: dto.items as any,
+      });
+      cartId = (cart as unknown as { _id: string })._id.toString();
+    } else {
+      // Existing flow: fetch cart from DB
+      let cart;
+      try {
+        cart = await this.cartService.getCartByUserId(dto.userId);
+      } catch {
+        throw new BadRequestException('Cart not found');
+      }
+
+      if (!cart.productIds || cart.productIds.length === 0) {
+        throw new BadRequestException('Cart is empty');
+      }
+
+      cartId = (cart as unknown as { _id: string })._id.toString();
+
+      for (const cartItem of cart.productIds) {
+        const product = cartItem.productId as unknown as {
+          _id: string;
+          productName: string;
+          price: number;
+        };
+        if (!product || !product.price) continue;
+
+        items.push({
+          productId: product._id.toString(),
+          productName: product.productName,
+          price: product.price,
+          quantity: cartItem.quantity,
+          color: cartItem.color,
+          size: cartItem.size,
+        });
+
+        subtotalUsd += product.price * cartItem.quantity;
+      }
+
+      if (items.length === 0) {
+        throw new BadRequestException('No valid products in cart');
+      }
     }
 
     // 2. Determine currency: shipping country → geo-IP fallback → default USD
@@ -74,46 +164,7 @@ export class PaymentService {
       }
     }
 
-    // 3. Calculate subtotal from cart items (prices are in USD)
-    const items: Array<{
-      productId: string;
-      productName: string;
-      price: number;
-      quantity: number;
-      color?: string;
-      size?: string;
-    }> = [];
-
-    let subtotalUsd = 0;
-
-    for (const cartItem of cart.productIds) {
-      const product = cartItem.productId as unknown as {
-        _id: string;
-        productName: string;
-        price: number;
-      };
-      if (!product || !product.price) continue;
-
-      const price = product.price;
-      const quantity = cartItem.quantity;
-
-      items.push({
-        productId: product._id.toString(),
-        productName: product.productName,
-        price,
-        quantity,
-        color: cartItem.color,
-        size: cartItem.size,
-      });
-
-      subtotalUsd += price * quantity;
-    }
-
-    if (items.length === 0) {
-      throw new BadRequestException('No valid products in cart');
-    }
-
-    // 4. Apply coupon if provided
+    // 3. Apply coupon if provided
     let couponId: Types.ObjectId | undefined;
     let discountAmount = 0;
 
@@ -133,7 +184,7 @@ export class PaymentService {
       subtotalUsd = Math.max(0, subtotalUsd - discountAmount);
     }
 
-    // 5. Calculate shipping cost
+    // 4. Calculate shipping cost
     const exchangeRate = parseFloat(process.env.CAD_EXCHANGE_RATE || '1.44');
 
     const shipping = this.shippingService.calculateShipping(
@@ -181,7 +232,7 @@ export class PaymentService {
     // 7. Save PaymentRecord with full order snapshot
     const payment = await this.paymentModel.create({
       userId: dto.userId,
-      itemIds: [cart._id.toString()],
+      itemIds: [cartId],
       paymentIntent: paymentIntent.id,
       totalAmount: total / 100,
       currency: paymentIntent.currency,
@@ -264,7 +315,7 @@ export class PaymentService {
 
     // Send confirmation email
     try {
-      const user = await this.userModel.findById(payment.userId);
+      const user = await this.userService.findById(payment.userId);
       if (user) {
         const confirmationHtml = this.buildConfirmationHtml(
           user.firstName,

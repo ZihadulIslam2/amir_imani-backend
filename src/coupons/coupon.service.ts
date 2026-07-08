@@ -193,6 +193,34 @@ export class CouponService {
       };
     }
 
+    // Guest validation — skip user-specific checks
+    if (!dto.userId) {
+      let guestDiscount: number;
+      if (coupon.discountType === DiscountType.PERCENTAGE) {
+        guestDiscount = (dto.cartTotal * coupon.discountValue) / 100;
+        if (
+          coupon.maxDiscountCap &&
+          guestDiscount > coupon.maxDiscountCap
+        ) {
+          guestDiscount = coupon.maxDiscountCap;
+        }
+      } else {
+        guestDiscount = Math.min(coupon.discountValue, dto.cartTotal);
+      }
+
+      return {
+        valid: true,
+        message: 'Coupon applied successfully',
+        data: {
+          couponId: coupon._id,
+          code: coupon.code,
+          discountType: coupon.discountType,
+          discountValue: coupon.discountValue,
+          discountAmount: Math.round(guestDiscount * 100) / 100,
+        },
+      };
+    }
+
     const userObjectId = new Types.ObjectId(dto.userId);
 
     if (coupon.eligibility === CouponEligibility.FIRST_TIME) {
