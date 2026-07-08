@@ -67,6 +67,20 @@ async function bootstrap() {
       spec: {
         content: document,
       },
+      proxyUrl: 'https://proxy.scalar.com',
+      onBeforeRequest: ({ requestBuilder }) => {
+        try {
+          const headers = requestBuilder?.headers;
+          if (!headers || typeof headers.forEach !== 'function') return;
+          headers.forEach((value: unknown, key: string) => {
+            if (typeof value === 'string' && /[^\x00-\xFF]/u.test(value)) {
+              headers.set(key, value.replace(/[^\x00-\xFF]/gu, ''));
+            }
+          });
+        } catch (e) {
+          console.warn('[Scalar] Header sanitization error:', e);
+        }
+      },
     }),
   );
 
