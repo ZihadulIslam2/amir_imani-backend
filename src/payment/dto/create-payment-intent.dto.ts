@@ -2,8 +2,12 @@ import {
   IsString,
   IsOptional,
   IsNumber,
-  ValidateNested,
+  IsEmail,
   Min,
+  IsArray,
+  IsMongoId,
+  IsNotEmpty,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -30,10 +34,55 @@ export class ShippingAddressDto {
   country: string;
 }
 
-export class CreatePaymentIntentDto {
-  @ApiProperty({ description: 'The MongoDB user ID placing the order', example: '60d21b4667d0d8992e610c85' })
+export class PaymentItemDto {
+  @ApiProperty({ description: 'The MongoDB product ID', example: '60d21b4667d0d8992e610c85' })
+  @IsMongoId()
+  @IsNotEmpty()
+  productId: string;
+
+  @ApiProperty({ description: 'Quantity of the product', example: 1, minimum: 1 })
+  @IsNumber()
+  @Min(1)
+  quantity: number;
+
+  @ApiPropertyOptional({ description: 'Chosen color of the product', example: 'gold' })
+  @IsOptional()
   @IsString()
-  userId: string;
+  color?: string;
+
+  @ApiPropertyOptional({ description: 'Chosen size of the product', example: 'm' })
+  @IsOptional()
+  @IsString()
+  size?: string;
+}
+
+export class CreatePaymentIntentDto {
+  @ApiPropertyOptional({ description: 'The MongoDB user ID placing the order (omit for guest checkout)', example: '60d21b4667d0d8992e610c85' })
+  @IsOptional()
+  @IsString()
+  userId?: string;
+
+  @ApiPropertyOptional({ description: 'Email for guest checkout (required if userId is not provided)' })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @ApiPropertyOptional({ description: 'First name for guest registration', example: 'John' })
+  @IsOptional()
+  @IsString()
+  firstName?: string;
+
+  @ApiPropertyOptional({ description: 'Last name for guest registration', example: 'Doe' })
+  @IsOptional()
+  @IsString()
+  lastName?: string;
+
+  @ApiPropertyOptional({ type: [PaymentItemDto], description: 'Cart items for checkout (required if userId is not provided, optional if userId is provided)' })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PaymentItemDto)
+  items?: PaymentItemDto[];
 
   @ApiProperty({ type: ShippingAddressDto, description: 'The shipping address for physical merchandise' })
   @ValidateNested()

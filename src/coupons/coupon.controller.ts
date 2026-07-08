@@ -19,7 +19,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Role } from '../auth/decorators/role.decorator';
 import { sendResponse } from '../common/utils/sendResponse';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('Coupons')
 @Controller('coupons')
@@ -143,7 +143,8 @@ export class CouponController {
 
   @Post('validate')
   @ApiOperation({ summary: 'Validate a coupon code against a user cart total' })
-  @ApiResponse({ status: 200, description: 'Validation query processed. Check response data for validity status.' })
+  @ApiBody({ type: ValidateCouponDto, description: 'For guest validation, omit userId. For registered users, include userId to check FIRST_TIME/SPECIFIC eligibility and perUserLimit.', examples: { 'guest': { summary: 'Guest validation', value: { code: 'SUMMER50', cartTotal: 99.99 } }, 'registered': { summary: 'Registered user', value: { code: 'WELCOME10', cartTotal: 150.00, userId: '664f1a2b3c4d5e6f7a8b9c0d' } } } })
+  @ApiResponse({ status: 200, description: 'Validation result. `success` indicates coupon validity.', schema: { example: { statusCode: 200, success: true, message: 'Coupon applied successfully', data: { couponId: '664f1a2b3c4d5e6f7a8b9c0e', code: 'SUMMER50', discountType: 'percentage', discountValue: 20, discountAmount: 19.99 } } } })
   async validateCoupon(@Body() dto: ValidateCouponDto, @Res() res: Response) {
     const result = await this.couponService.validateCoupon(dto);
     sendResponse(res, {
@@ -155,9 +156,19 @@ export class CouponController {
   }
 
   @Post('apply')
-  @ApiOperation({ summary: 'Apply a coupon to a purchase and calculate discount' })
+  @ApiOperation({ summary: 'Apply a coupon to a purchase (registered users only; guests use the validate endpoint and coupon is recorded on payment success)' })
+  @ApiBody({ type: ValidateCouponDto, description: 'Requires userId — only registered users can directly apply a coupon.' })
   @ApiResponse({ status: 200, description: 'Coupon applied successfully. Returns discount details.' })
+  @ApiResponse({ status: 400, description: 'userId is required for coupon application' })
   async applyCoupon(@Body() dto: ValidateCouponDto, @Res() res: Response) {
+    if (!dto.userId) {
+      return sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: 'userId is required for coupon application. Guest coupons are recorded at payment completion.',
+        data: null,
+      });
+    }
     const result = await this.couponService.applyCoupon(dto);
     sendResponse(res, {
       statusCode: 200,
