@@ -156,19 +156,11 @@ export class CouponController {
   }
 
   @Post('apply')
-  @ApiOperation({ summary: 'Apply a coupon to a purchase (registered users only; guests use the validate endpoint and coupon is recorded on payment success)' })
-  @ApiBody({ type: ValidateCouponDto, description: 'Requires userId — only registered users can directly apply a coupon.' })
-  @ApiResponse({ status: 200, description: 'Coupon applied successfully. Returns discount details.' })
-  @ApiResponse({ status: 400, description: 'userId is required for coupon application' })
+  @ApiOperation({ summary: 'Apply a coupon to a purchase (works for both guests and registered users). For guests, coupons are validated and the discount is returned without recording usage (recording happens on payment success via webhook). For registered users, usage is tracked immediately.' })
+  @ApiBody({ type: ValidateCouponDto, description: 'For guest application, omit userId. For registered users, include userId.', examples: { 'guest': { summary: 'Guest apply', value: { code: 'SUMMER50', cartTotal: 99.99 } }, 'registered': { summary: 'Registered user', value: { code: 'WELCOME10', cartTotal: 150.00, userId: '664f1a2b3c4d5e6f7a8b9c0d' } } } })
+  @ApiResponse({ status: 200, description: 'Coupon applied successfully. Returns discount amount.', schema: { example: { statusCode: 200, success: true, message: 'Coupon applied successfully', data: { discountAmount: 19.99 } } } })
+  @ApiResponse({ status: 400, description: 'Invalid or expired coupon code' })
   async applyCoupon(@Body() dto: ValidateCouponDto, @Res() res: Response) {
-    if (!dto.userId) {
-      return sendResponse(res, {
-        statusCode: 400,
-        success: false,
-        message: 'userId is required for coupon application. Guest coupons are recorded at payment completion.',
-        data: null,
-      });
-    }
     const result = await this.couponService.applyCoupon(dto);
     sendResponse(res, {
       statusCode: 200,

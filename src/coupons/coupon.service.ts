@@ -293,6 +293,16 @@ export class CouponService {
       throw new BadRequestException(validation.message);
     }
 
+    // Guests: validate + return discount without recording usage
+    // Usage is recorded on payment success via webhook
+    if (!dto.userId) {
+      return {
+        success: true,
+        message: 'Coupon applied successfully',
+        discountAmount: validation.data!.discountAmount,
+      };
+    }
+
     const userObjectId = new Types.ObjectId(dto.userId);
     const couponObjectId = new Types.ObjectId(validation.data!.couponId);
 
