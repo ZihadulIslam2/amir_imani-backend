@@ -18,6 +18,7 @@ import { ShippingModule } from './shipping/shipping.module';
 import { FortuneTellingModule } from './fortune-telling/fortune-telling.module';
 import { CouponModule } from './coupons/coupon.module';
 import { CustomerModule } from './customers/customer.module';
+import { OrderModule } from './orders/order.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { CustomerModule } from './customers/customer.module';
     FortuneTellingModule,
     CouponModule,
     CustomerModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [AppService],
