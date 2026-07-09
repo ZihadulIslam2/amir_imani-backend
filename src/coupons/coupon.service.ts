@@ -139,7 +139,15 @@ export class CouponService {
 
   async getAllCoupons(
     status?: 'active' | 'expired' | 'all',
-  ): Promise<Coupon[]> {
+    page = 1,
+    limit = 10,
+  ): Promise<{
+    coupons: Coupon[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
     const now = new Date();
     let filter: Record<string, unknown> = {};
 
@@ -149,7 +157,20 @@ export class CouponService {
       filter = { $or: [{ expiryDate: { $lt: now } }, { isActive: false }] };
     }
 
-    return this.couponModel.find(filter).sort({ createdAt: -1 }).exec();
+    const skip = (page - 1) * limit;
+
+    const [coupons, total] = await Promise.all([
+      this.couponModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
+      this.couponModel.countDocuments(filter).exec(),
+    ]);
+
+    return {
+      coupons,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async getCouponById(id: string): Promise<Coupon> {

@@ -86,23 +86,32 @@ export class CouponController {
   @Role('admin')
   @ApiBearerAuth('JWT-auth')
   @Get()
-  @ApiOperation({ summary: 'Retrieve list of all coupons (Admin only)' })
+  @ApiOperation({ summary: 'Retrieve paginated list of all coupons (Admin only)' })
   @ApiQuery({ name: 'status', description: 'Filter by active/expired/all status', enum: ['active', 'expired', 'all'], required: false })
+  @ApiQuery({ name: 'page', description: 'Page number (default: 1)', required: false, type: Number })
+  @ApiQuery({ name: 'limit', description: 'Coupons per page (default: 10)', required: false, type: Number })
   @ApiResponse({ status: 200, description: 'Coupons retrieved successfully.' })
   @ApiResponse({ status: 403, description: 'Forbidden. Requires admin role.' })
-  async getAllCoupons(@Res() res: Response, @Query('status') status?: string) {
+  async getAllCoupons(
+    @Res() res: Response,
+    @Query('status') status?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
     const validStatuses = ['active', 'expired', 'all'] as const;
     const filter = validStatuses.includes(
       status as 'active' | 'expired' | 'all',
     )
       ? (status as 'active' | 'expired' | 'all')
       : undefined;
-    const coupons = await this.couponService.getAllCoupons(filter);
+    const pageNum = Math.max(1, parseInt(page ?? '1', 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit ?? '10', 10) || 10));
+    const result = await this.couponService.getAllCoupons(filter, pageNum, limitNum);
     sendResponse(res, {
       statusCode: 200,
       success: true,
       message: 'Coupons retrieved successfully',
-      data: coupons,
+      data: result,
     });
   }
 
