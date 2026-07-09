@@ -60,6 +60,9 @@ export class User {
   @Prop({ enum: ['user', 'admin'], default: 'user' })
   role: string;
 
+  @Prop({ enum: ['active', 'blocked'], default: 'active' })
+  status: string;
+
   @Prop({ required: true })
   password: string;
 }
