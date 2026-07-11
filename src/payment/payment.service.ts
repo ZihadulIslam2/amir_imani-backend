@@ -254,6 +254,7 @@ export class PaymentService {
     return {
       clientSecret: paymentIntent.client_secret,
       paymentId: payment._id,
+      stripeMode: paymentIntent.livemode ? 'live' : 'test',
       ...(couponInfo && { coupon: couponInfo }),
     };
   }
