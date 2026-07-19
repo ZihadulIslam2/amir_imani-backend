@@ -1,9 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { Product, ProductDocument } from './product.schema';
+import {
+  Product,
+  ProductCategory,
+  ProductDocument,
+  ProductType,
+} from './product.schema';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
@@ -40,9 +49,10 @@ export class ProductsService {
         .filter(Boolean) as string[];
     }
     const imgs = Array.from(new Set([...baseImgs, ...uploadedImgs]));
+    const productData = this.prepareProductPayload(dto);
 
     const newProduct = new this.productModel({
-      ...dto,
+      ...productData,
       imgs,
     });
     const savedProduct = await newProduct.save();
@@ -72,11 +82,38 @@ export class ProductsService {
     return savedProduct;
   }
 
-  async getAllProducts(type?: string, search?: string): Promise<Product[]> {
+  async getAllProducts(
+    type?: string,
+    search?: string,
+    category?: ProductCategory,
+  ): Promise<Product[]> {
     const query: FilterQuery<Product> = {};
+
+    if (
+      category &&
+      !Object.values(ProductCategory).includes(category as ProductCategory)
+    ) {
+      throw new BadRequestException(
+        'Invalid product category. Allowed values are: ALL, APPAREL, ACCESSORIES, PRINTS & POSTERS, STATIONERY, HOME & DECOR, COLLECTIBLES.',
+      );
+    }
 
     if (type) {
       query.productType = type;
+    }
+
+    if (category) {
+      if (type === ProductType.CARD) {
+        throw new BadRequestException(
+          'Category filter is only available for merchandise products.',
+        );
+      }
+
+      query.productType = ProductType.MARCHANDICE;
+
+      if (category !== ProductCategory.ALL) {
+        query.category = category;
+      }
     }
 
     if (search) {
@@ -141,10 +178,23 @@ export class ProductsService {
         .filter(Boolean) as string[];
     }
     const imgs = Array.from(new Set([...baseImgs, ...uploadedImgs]));
-    console.log('dto', dto);
+    const currentProduct = await this.productModel.findById(id).exec();
 
+    if (!currentProduct) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+
+    const productData = this.prepareProductPayload(dto, currentProduct);
+    const { category, ...productDataWithoutCategory } = productData;
+    const shouldUnsetCategory = category === undefined;
+    const updateQuery = shouldUnsetCategory
+      ? {
+          $set: { ...productDataWithoutCategory, imgs },
+          $unset: { category: '' },
+        }
+      : { $set: { ...productData, imgs } };
     const updatedProduct = await this.productModel
-      .findByIdAndUpdate(id, { ...dto, imgs }, { new: true })
+      .findByIdAndUpdate(id, updateQuery, { new: true })
       .exec();
 
     if (!updatedProduct) {
@@ -165,5 +215,37 @@ export class ProductsService {
     await this.cartService.deleteProductFromAllCarts(id);
 
     return { message: 'Product deleted successfully' };
+  }
+
+  private prepareProductPayload(
+    dto: CreateProductDto | UpdateProductDto,
+    currentProduct?: Product,
+  ) {
+    const productType = dto.productType ?? currentProduct?.productType;
+    const category = dto.category ?? currentProduct?.category;
+
+    if (productType === ProductType.CARD && dto.category) {
+      throw new BadRequestException(
+        'Category is only allowed for merchandise products.',
+      );
+    }
+
+    if (productType === ProductType.CARD) {
+      return {
+        ...dto,
+        category: undefined,
+      };
+    }
+
+    if (productType === ProductType.MARCHANDICE && !category) {
+      throw new BadRequestException(
+        'Category is required for merchandise products.',
+      );
+    }
+
+    return {
+      ...dto,
+      category,
+    };
   }
 }
