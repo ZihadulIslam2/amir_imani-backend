@@ -1,14 +1,13 @@
 import { BullModule } from '@nestjs/bullmq';
 import { Module, forwardRef } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { ProductNotificationProcessor } from './product-notification.processor';
 import { EmailModule } from '../email/email.module';
-import { Email, EmailSchema } from '../email/email.schema';
+import { SubscribersModule } from '../subscribers/subscribers.module';
 
 @Module({
   imports: [
     forwardRef(() => EmailModule),
-    MongooseModule.forFeature([{ name: Email.name, schema: EmailSchema }]),
+    SubscribersModule,
     BullModule.registerQueue({
       name: 'product-notification',
     }),
