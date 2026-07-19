@@ -20,6 +20,7 @@ import { CouponModule } from './coupons/coupon.module';
 import { CustomerModule } from './customers/customer.module';
 import { OrderModule } from './orders/order.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { SubscribersModule } from './subscribers/subscribers.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { ReviewsModule } from './reviews/reviews.module';
     CustomerModule,
     OrderModule,
     ReviewsModule,
+    SubscribersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
