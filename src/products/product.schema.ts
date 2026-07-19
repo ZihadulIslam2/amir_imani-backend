@@ -8,6 +8,16 @@ export enum ProductType {
   MARCHANDICE = 'marchandice',
 }
 
+export enum ProductCategory {
+  ALL = 'ALL',
+  APPAREL = 'APPAREL',
+  ACCESSORIES = 'ACCESSORIES',
+  PRINTS_AND_POSTERS = 'PRINTS & POSTERS',
+  STATIONERY = 'STATIONERY',
+  HOME_AND_DECOR = 'HOME & DECOR',
+  COLLECTIBLES = 'COLLECTIBLES',
+}
+
 export enum ProductSize {
   S = 's',
   M = 'm',
@@ -30,6 +40,13 @@ export class Product {
     required: true,
   })
   productType: ProductType;
+
+  @Prop({
+    type: String,
+    enum: ProductCategory,
+    required: false,
+  })
+  category?: ProductCategory;
 
   @Prop({ required: true })
   feature: string;
