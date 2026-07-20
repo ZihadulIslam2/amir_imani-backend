@@ -107,6 +107,12 @@ export class Product {
 
   @Prop()
   garmentCARE?: string;
+
+  @Prop({ required: false, default: false })
+  addHome?: boolean;
+
+  @Prop({ required: false })
+  ca_price?: number;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

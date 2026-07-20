@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -219,4 +220,22 @@ export class UpdateProductDto {
   @IsString()
   @IsOptional()
   garmentCARE?: string;
+
+  @ApiPropertyOptional({
+    description: 'Whether the product should appear on the home page',
+    example: false,
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  addHome?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Canadian price of the product',
+    example: 39.99,
+  })
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  ca_price?: number;
 }
