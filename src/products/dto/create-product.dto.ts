@@ -62,7 +62,7 @@ export class CreateProductDto {
   imgs?: string[];
 
   @ApiProperty({
-    description: 'The type category of the product',
+    description: 'The type of the product',
     enum: ProductType,
     example: ProductType.CARD,
   })
@@ -110,4 +110,110 @@ export class CreateProductDto {
   @IsNumber()
   @IsOptional()
   quantity?: number;
+
+  @ApiPropertyOptional({
+    description: 'The title for the rules section',
+    example: 'How to Play',
+  })
+  @IsString()
+  @IsOptional()
+  ruleTitle?: string;
+
+  @ApiPropertyOptional({
+    description: 'Array of rule objects',
+    example: [{ title: 'Setup', description: 'Place the board...' }],
+  })
+  @IsArray()
+  @IsOptional()
+  rulls?: Record<string, any>[];
+
+  @ApiPropertyOptional({
+    description: 'Title for the board anatomy section',
+    example: 'Board Layout',
+  })
+  @IsString()
+  @IsOptional()
+  boardanatomyTitle?: string;
+
+  @ApiPropertyOptional({
+    description: 'Description for the board anatomy',
+    example: 'The board consists of 40 spaces...',
+  })
+  @IsString()
+  @IsOptional()
+  boardAnatomyDiscription?: string;
+
+  @ApiPropertyOptional({
+    description: 'Title for the pass-and-play section',
+    example: 'Pass & Play Mode',
+  })
+  @IsString()
+  @IsOptional()
+  passandplayTittle?: string;
+
+  @ApiPropertyOptional({
+    description: 'Array of pass-and-play message objects',
+    example: [
+      { message: 'Welcome!', name: 'Player 1', type: 'text' },
+    ],
+  })
+  @IsArray()
+  @IsOptional()
+  passandplay?: { message?: string; name?: string; type?: string }[];
+
+  @ApiPropertyOptional({
+    description: 'Title for the garment section',
+    example: 'Premium T-Shirt',
+  })
+  @IsString()
+  @IsOptional()
+  garmentTitle?: string;
+
+  @ApiPropertyOptional({
+    description: 'Material description for the garment',
+    example: '100% Organic Cotton',
+  })
+  @IsString()
+  @IsOptional()
+  garmentsMATERIAL?: string;
+
+  @ApiPropertyOptional({
+    description: 'Weight of the garment',
+    example: '200 GSM',
+  })
+  @IsString()
+  @IsOptional()
+  garmentWEIGHT?: string;
+
+  @ApiPropertyOptional({
+    description: 'Fit description for the garment',
+    example: 'Regular Fit',
+  })
+  @IsString()
+  @IsOptional()
+  garmentFit?: string;
+
+  @ApiPropertyOptional({
+    description: 'Print/pattern details',
+    example: 'Screen Printed',
+  })
+  @IsString()
+  @IsOptional()
+  garmentPRINT?: string;
+
+  @ApiPropertyOptional({
+    description: 'Country of manufacture',
+    example: 'Bangladesh',
+  })
+  @IsString()
+  @IsOptional()
+  garmentMADeIN?: string;
+
+  @ApiPropertyOptional({
+    description: 'Care instructions for the garment',
+    example: 'Machine wash cold',
+  })
+  @IsString()
+  @IsOptional()
+  garmentCARE?: string;
 }

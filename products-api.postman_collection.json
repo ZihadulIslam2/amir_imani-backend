@@ -132,6 +132,71 @@
               "key": "img",
               "type": "file",
               "src": []
+            },
+            {
+              "key": "ruleTitle",
+              "value": "How to Play",
+              "type": "text"
+            },
+            {
+              "key": "rulls",
+              "value": "[{\"title\":\"Setup\",\"description\":\"Place the board in the center\"},{\"title\":\"Gameplay\",\"description\":\"Players take turns rolling the dice\"}]",
+              "type": "text"
+            },
+            {
+              "key": "boardanatomyTitle",
+              "value": "Board Layout",
+              "type": "text"
+            },
+            {
+              "key": "boardAnatomyDiscription",
+              "value": "The board consists of 40 spaces arranged in a square",
+              "type": "text"
+            },
+            {
+              "key": "passandplayTittle",
+              "value": "Pass & Play Mode",
+              "type": "text"
+            },
+            {
+              "key": "passandplay",
+              "value": "[{\"message\":\"Welcome to the game!\",\"name\":\"Player 1\",\"type\":\"text\"},{\"message\":\"Your turn!\",\"name\":\"Player 2\",\"type\":\"text\"}]",
+              "type": "text"
+            },
+            {
+              "key": "garmentTitle",
+              "value": "Premium T-Shirt",
+              "type": "text"
+            },
+            {
+              "key": "garmentsMATERIAL",
+              "value": "100% Organic Cotton",
+              "type": "text"
+            },
+            {
+              "key": "garmentWEIGHT",
+              "value": "200 GSM",
+              "type": "text"
+            },
+            {
+              "key": "garmentFit",
+              "value": "Regular Fit",
+              "type": "text"
+            },
+            {
+              "key": "garmentPRINT",
+              "value": "Screen Printed",
+              "type": "text"
+            },
+            {
+              "key": "garmentMADeIN",
+              "value": "Bangladesh",
+              "type": "text"
+            },
+            {
+              "key": "garmentCARE",
+              "value": "Machine wash cold with like colors",
+              "type": "text"
             }
           ]
         },
@@ -335,6 +400,84 @@
               "type": "file",
               "src": [],
               "description": "Optional: Upload new image"
+            },
+            {
+              "key": "ruleTitle",
+              "value": "How to Play (Updated)",
+              "type": "text",
+              "description": "Optional: Rule title"
+            },
+            {
+              "key": "rulls",
+              "value": "[{\"title\":\"Setup\",\"description\":\"Updated setup instructions\"}]",
+              "type": "text",
+              "description": "Optional: Array of rule objects"
+            },
+            {
+              "key": "boardanatomyTitle",
+              "value": "Board Layout",
+              "type": "text",
+              "description": "Optional: Board anatomy title"
+            },
+            {
+              "key": "boardAnatomyDiscription",
+              "value": "Updated board description",
+              "type": "text",
+              "description": "Optional: Board anatomy description"
+            },
+            {
+              "key": "passandplayTittle",
+              "value": "Pass & Play Mode",
+              "type": "text",
+              "description": "Optional: Pass-and-play title"
+            },
+            {
+              "key": "passandplay",
+              "value": "[{\"message\":\"Updated welcome message\",\"name\":\"Player 1\",\"type\":\"text\"}]",
+              "type": "text",
+              "description": "Optional: Pass-and-play messages"
+            },
+            {
+              "key": "garmentTitle",
+              "value": "Premium Hoodie",
+              "type": "text",
+              "description": "Optional: Garment title"
+            },
+            {
+              "key": "garmentsMATERIAL",
+              "value": "80% Cotton, 20% Polyester",
+              "type": "text",
+              "description": "Optional: Garment material"
+            },
+            {
+              "key": "garmentWEIGHT",
+              "value": "300 GSM",
+              "type": "text",
+              "description": "Optional: Garment weight"
+            },
+            {
+              "key": "garmentFit",
+              "value": "Oversized Fit",
+              "type": "text",
+              "description": "Optional: Garment fit"
+            },
+            {
+              "key": "garmentPRINT",
+              "value": "Embroidery",
+              "type": "text",
+              "description": "Optional: Garment print type"
+            },
+            {
+              "key": "garmentMADeIN",
+              "value": "Bangladesh",
+              "type": "text",
+              "description": "Optional: Garment origin"
+            },
+            {
+              "key": "garmentCARE",
+              "value": "Machine wash cold, tumble dry low",
+              "type": "text",
+              "description": "Optional: Garment care instructions"
             }
           ]
         },

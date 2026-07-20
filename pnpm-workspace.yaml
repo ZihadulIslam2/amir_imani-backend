@@ -1,0 +1,5 @@
+allowBuilds:
+  '@scarf/scarf': true
+  bcrypt: true
+  core-js: true
+  msgpackr-extract: true

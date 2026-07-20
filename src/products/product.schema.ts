@@ -68,6 +68,45 @@ export class Product {
 
   @Prop({ required: false, default: 0 })
   quantity?: number;
+
+  @Prop()
+  ruleTitle?: string;
+
+  @Prop({ type: [{ type: Object }], required: false })
+  rulls?: Record<string, any>[];
+
+  @Prop()
+  boardanatomyTitle?: string;
+
+  @Prop()
+  boardAnatomyDiscription?: string;
+
+  @Prop()
+  passandplayTittle?: string;
+
+  @Prop({ type: [{ type: Object }], required: false })
+  passandplay?: { message?: string; name?: string; type?: string }[];
+
+  @Prop()
+  garmentTitle?: string;
+
+  @Prop()
+  garmentsMATERIAL?: string;
+
+  @Prop()
+  garmentWEIGHT?: string;
+
+  @Prop()
+  garmentFit?: string;
+
+  @Prop()
+  garmentPRINT?: string;
+
+  @Prop()
+  garmentMADeIN?: string;
+
+  @Prop()
+  garmentCARE?: string;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
