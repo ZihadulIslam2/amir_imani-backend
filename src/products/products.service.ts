@@ -39,7 +39,7 @@ export class ProductsService {
     dto: CreateProductDto,
     files?: Express.Multer.File[],
   ): Promise<Product> {
-    const baseImgs = dto.imgs ?? [];
+    const baseImgs = dto.existingImgs ?? dto.imgs ?? [];
     let uploadedImgs: string[] = [];
     if (files?.length) {
       const uploads = await Promise.all(
@@ -128,6 +128,10 @@ export class ProductsService {
     return await this.productModel.find(query).exec();
   }
 
+  getMerchandiseCategories(): ProductCategory[] {
+    return Object.values(ProductCategory);
+  }
+
   async getProductById(id: string): Promise<Product> {
     const product = await this.productModel.findById(id).exec();
     if (!product) {
@@ -172,7 +176,7 @@ export class ProductsService {
     dto: UpdateProductDto,
     files?: Express.Multer.File[],
   ): Promise<Product> {
-    const baseImgs = dto.imgs ?? [];
+    const baseImgs = dto.existingImgs ?? dto.imgs ?? [];
     let uploadedImgs: string[] = [];
     if (files?.length) {
       const uploads = await Promise.all(

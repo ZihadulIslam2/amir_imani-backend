@@ -97,6 +97,27 @@ export class ProductsController {
     });
   }
 
+  @Get('categories')
+  @ApiOperation({
+    summary: 'Retrieve all supported merchandise categories',
+    description:
+      'Returns the canonical merchandise category list used by the backend, including ALL.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Merchandise categories retrieved successfully.',
+  })
+  async getMerchandiseCategories(@Res() res: Response) {
+    const categories = this.productsService.getMerchandiseCategories();
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: 'Merchandise categories retrieved successfully',
+      data: categories,
+    });
+  }
+
   @Get('purchased/:userId')
   @ApiOperation({ summary: 'Retrieve all purchased products for a user' })
   @ApiParam({
