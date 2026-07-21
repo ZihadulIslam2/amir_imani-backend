@@ -197,6 +197,16 @@
               "key": "garmentCARE",
               "value": "Machine wash cold with like colors",
               "type": "text"
+            },
+            {
+              "key": "addHome",
+              "value": "true",
+              "type": "text"
+            },
+            {
+              "key": "ca_price",
+              "value": "6499",
+              "type": "text"
             }
           ]
         },
@@ -262,6 +272,16 @@
               "key": "img",
               "type": "file",
               "src": []
+            },
+            {
+              "key": "addHome",
+              "value": "false",
+              "type": "text"
+            },
+            {
+              "key": "ca_price",
+              "value": "3499",
+              "type": "text"
             }
           ]
         },
@@ -327,6 +347,16 @@
               "key": "img",
               "type": "file",
               "src": []
+            },
+            {
+              "key": "addHome",
+              "value": "true",
+              "type": "text"
+            },
+            {
+              "key": "ca_price",
+              "value": "10999",
+              "type": "text"
             }
           ]
         },
@@ -478,6 +508,18 @@
               "value": "Machine wash cold, tumble dry low",
               "type": "text",
               "description": "Optional: Garment care instructions"
+            },
+            {
+              "key": "addHome",
+              "value": "true",
+              "type": "text",
+              "description": "Optional: Show on home page"
+            },
+            {
+              "key": "ca_price",
+              "value": "199",
+              "type": "text",
+              "description": "Optional: Canadian price"
             }
           ]
         },
