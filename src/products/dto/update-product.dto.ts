@@ -5,9 +5,30 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ProductCategory, ProductType } from '../product.schema';
+
+const parseOptionalArray = ({ value }: { value: unknown }) => {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [value];
+    } catch {
+      return [value];
+    }
+  }
+
+  return undefined;
+};
 
 export class UpdateProductDto {
   @ApiPropertyOptional({
@@ -82,15 +103,27 @@ export class UpdateProductDto {
     description:
       'Product images to upload (supports file upload or string URLs)',
   })
+  @Transform(parseOptionalArray)
   @IsArray()
   @IsOptional()
   @IsString({ each: true })
   imgs?: string[];
 
   @ApiPropertyOptional({
+    description: 'Existing image URLs to retain while uploading new files',
+    example: ['https://example.com/image.png'],
+  })
+  @Transform(parseOptionalArray)
+  @IsArray()
+  @IsOptional()
+  @IsString({ each: true })
+  existingImgs?: string[];
+
+  @ApiPropertyOptional({
     description: 'Available colors for the product',
     example: ['gold', 'black'],
   })
+  @Transform(parseOptionalArray)
   @IsArray()
   @IsOptional()
   @IsString({ each: true })
@@ -100,6 +133,7 @@ export class UpdateProductDto {
     description: 'Available sizes for the product',
     example: ['s', 'm', 'l'],
   })
+  @Transform(parseOptionalArray)
   @IsArray()
   @IsOptional()
   @IsString({ each: true })
@@ -126,6 +160,7 @@ export class UpdateProductDto {
     description: 'Array of rule objects',
     example: [{ title: 'Setup', description: 'Place the board...' }],
   })
+  @Transform(parseOptionalArray)
   @IsArray()
   @IsOptional()
   rulls?: Record<string, any>[];
@@ -160,6 +195,7 @@ export class UpdateProductDto {
       { message: 'Welcome!', name: 'Player 1', type: 'text' },
     ],
   })
+  @Transform(parseOptionalArray)
   @IsArray()
   @IsOptional()
   passandplay?: { message?: string; name?: string; type?: string }[];
