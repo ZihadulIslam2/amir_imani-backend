@@ -7,8 +7,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import { classToPlain } from 'class-transformer';
 import {
+  MerchandiseBadge,
   Product,
   ProductCategory,
   ProductDocument,
@@ -54,6 +54,10 @@ export class ProductsService {
 
     const newProduct = new this.productModel({
       ...productData,
+      ...(dto.productType === ProductType.MARCHANDICE &&
+      dto.merchandiseBadge !== undefined
+        ? { merchandiseBadge: dto.merchandiseBadge }
+        : {}),
       imgs,
     });
     const savedProduct = await newProduct.save();
@@ -186,16 +190,35 @@ export class ProductsService {
     }
 
     const productData = this.prepareProductPayload(dto, currentProduct);
-    const { category, ...productDataWithoutCategory } = productData;
+    const requestedMerchandiseBadge = dto.merchandiseBadge;
+    const {
+      category,
+      merchandiseBadge,
+      ...productDataWithoutConditionalFields
+    } = productData;
     const shouldUnsetCategory = category === undefined;
-    const updateQuery = shouldUnsetCategory
-      ? {
-          $set: { ...productDataWithoutCategory, imgs },
-          $unset: { category: '' },
-        }
-      : { $set: { ...productData, imgs } };
+    const shouldUnsetMerchandiseBadge = merchandiseBadge === undefined;
+    const updateQuery = {
+      $set: {
+        ...productDataWithoutConditionalFields,
+        ...(category !== undefined ? { category } : {}),
+        ...(requestedMerchandiseBadge !== undefined
+          ? { merchandiseBadge: requestedMerchandiseBadge }
+          : merchandiseBadge !== undefined
+            ? { merchandiseBadge }
+            : {}),
+        imgs,
+      },
+      $unset: {
+        ...(shouldUnsetCategory ? { category: '' } : {}),
+        ...(shouldUnsetMerchandiseBadge ? { merchandiseBadge: '' } : {}),
+      },
+    };
     const updatedProduct = await this.productModel
-      .findByIdAndUpdate(id, updateQuery, { new: true })
+      .findByIdAndUpdate(id, updateQuery, {
+        new: true,
+        runValidators: true,
+      })
       .exec();
 
     if (!updatedProduct) {
@@ -222,9 +245,16 @@ export class ProductsService {
     dto: CreateProductDto | UpdateProductDto,
     currentProduct?: Product,
   ) {
-    const plainDto = classToPlain(dto) as Record<string, any>;
-    const productType = (plainDto.productType as ProductType) ?? currentProduct?.productType;
-    const category = (plainDto.category as ProductCategory) ?? currentProduct?.category;
+    // Use the validated DTO directly. Converting multipart DTO instances with
+    // classToPlain can omit newly added optional properties at runtime.
+    const plainDto = { ...dto } as Record<string, unknown>;
+    const productType =
+      (plainDto.productType as ProductType) ?? currentProduct?.productType;
+    const category =
+      (plainDto.category as ProductCategory) ?? currentProduct?.category;
+    const merchandiseBadge =
+      (plainDto.merchandiseBadge as MerchandiseBadge | undefined) ??
+      currentProduct?.merchandiseBadge;
 
     if (productType === ProductType.CARD && plainDto.category) {
       throw new BadRequestException(
@@ -236,6 +266,7 @@ export class ProductsService {
       return {
         ...plainDto,
         category: undefined,
+        merchandiseBadge: undefined,
       };
     }
 
@@ -248,6 +279,7 @@ export class ProductsService {
     return {
       ...plainDto,
       category,
+      merchandiseBadge,
     };
   }
 }

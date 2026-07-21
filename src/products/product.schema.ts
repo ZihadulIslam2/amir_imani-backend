@@ -8,6 +8,14 @@ export enum ProductType {
   MARCHANDICE = 'marchandice',
 }
 
+export enum MerchandiseBadge {
+  NONE = 'none',
+  NEW_ARRIVAL = 'new_arrival',
+  MOST_POPULAR = 'most_popular',
+  BEST_SELLER = 'best_seller',
+  LIMITED_EDITION = 'limited_edition',
+}
+
 export enum ProductCategory {
   ALL = 'ALL',
   APPAREL = 'APPAREL',
@@ -47,6 +55,13 @@ export class Product {
     required: false,
   })
   category?: ProductCategory;
+
+  @Prop({
+    type: String,
+    enum: MerchandiseBadge,
+    required: false,
+  })
+  merchandiseBadge?: MerchandiseBadge;
 
   @Prop({ required: true })
   feature: string;

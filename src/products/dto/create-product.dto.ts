@@ -8,7 +8,11 @@ import {
   IsString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ProductCategory, ProductType } from '../product.schema';
+import {
+  MerchandiseBadge,
+  ProductCategory,
+  ProductType,
+} from '../product.schema';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateProductDto {
@@ -86,6 +90,17 @@ export class CreateProductDto {
   category?: ProductCategory;
 
   @ApiPropertyOptional({
+    description: 'Badge shown on merchandise cards',
+    enum: MerchandiseBadge,
+    example: MerchandiseBadge.NEW_ARRIVAL,
+  })
+  @IsEnum(MerchandiseBadge, {
+    message: 'Invalid merchandise badge',
+  })
+  @IsOptional()
+  merchandiseBadge?: MerchandiseBadge;
+
+  @ApiPropertyOptional({
     description: 'Available colors for the product',
     example: ['gold', 'black'],
   })
@@ -154,9 +169,7 @@ export class CreateProductDto {
 
   @ApiPropertyOptional({
     description: 'Array of pass-and-play message objects',
-    example: [
-      { message: 'Welcome!', name: 'Player 1', type: 'text' },
-    ],
+    example: [{ message: 'Welcome!', name: 'Player 1', type: 'text' }],
   })
   @IsArray()
   @IsOptional()
