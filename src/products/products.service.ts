@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { classToPlain } from 'class-transformer';
 import {
   Product,
   ProductCategory,
@@ -221,10 +222,11 @@ export class ProductsService {
     dto: CreateProductDto | UpdateProductDto,
     currentProduct?: Product,
   ) {
-    const productType = dto.productType ?? currentProduct?.productType;
-    const category = dto.category ?? currentProduct?.category;
+    const plainDto = classToPlain(dto) as Record<string, any>;
+    const productType = (plainDto.productType as ProductType) ?? currentProduct?.productType;
+    const category = (plainDto.category as ProductCategory) ?? currentProduct?.category;
 
-    if (productType === ProductType.CARD && dto.category) {
+    if (productType === ProductType.CARD && plainDto.category) {
       throw new BadRequestException(
         'Category is only allowed for merchandise products.',
       );
@@ -232,7 +234,7 @@ export class ProductsService {
 
     if (productType === ProductType.CARD) {
       return {
-        ...dto,
+        ...plainDto,
         category: undefined,
       };
     }
@@ -244,7 +246,7 @@ export class ProductsService {
     }
 
     return {
-      ...dto,
+      ...plainDto,
       category,
     };
   }

@@ -226,6 +226,7 @@ export class UpdateProductDto {
     example: false,
     default: false,
   })
+  @Type(() => Boolean)
   @IsBoolean()
   @IsOptional()
   addHome?: boolean;
