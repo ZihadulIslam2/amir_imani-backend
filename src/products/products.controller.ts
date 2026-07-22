@@ -12,7 +12,7 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -35,7 +35,7 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
-  @UseInterceptors(FilesInterceptor('imgs'))
+  @UseInterceptors(AnyFilesInterceptor())
   @ApiOperation({
     summary: 'Create a new product with optional image uploads',
     description:
@@ -78,13 +78,7 @@ export class ProductsController {
         // New fields
         productFeatures: {
           type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              name: { type: 'string' },
-              value: { type: 'string' },
-            },
-          },
+          items: { type: 'string' },
         },
         gameSubtitle: { type: 'string' },
         players: { type: 'string' },
@@ -109,7 +103,7 @@ export class ProductsController {
             },
           },
         },
-        homeImage: { type: 'string' },
+        homeImage: { type: 'string', format: 'binary' },
       },
     },
   })
@@ -236,7 +230,7 @@ export class ProductsController {
   }
 
   @Put(':id')
-  @UseInterceptors(FilesInterceptor('imgs'))
+  @UseInterceptors(AnyFilesInterceptor())
   @ApiOperation({
     summary: 'Update an existing product',
     description:
@@ -284,13 +278,7 @@ export class ProductsController {
         // New fields
         productFeatures: {
           type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              name: { type: 'string' },
-              value: { type: 'string' },
-            },
-          },
+          items: { type: 'string' },
         },
         gameSubtitle: { type: 'string' },
         players: { type: 'string' },
@@ -315,7 +303,7 @@ export class ProductsController {
             },
           },
         },
-        homeImage: { type: 'string' },
+        homeImage: { type: 'string', format: 'binary' },
       },
     },
   })

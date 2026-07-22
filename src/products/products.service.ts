@@ -40,11 +40,13 @@ export class ProductsService {
     dto: CreateProductDto,
     files?: Express.Multer.File[],
   ): Promise<Product> {
+    const imageFiles = files?.filter((file) => file.fieldname === 'imgs') ?? [];
+    const homeImageFile = files?.find((file) => file.fieldname === 'homeImage');
     const baseImgs = dto.existingImgs ?? dto.imgs ?? [];
     let uploadedImgs: string[] = [];
-    if (files?.length) {
+    if (imageFiles.length) {
       const uploads = await Promise.all(
-        files.map((f) => this.cloudinaryService.uploadImage(f)),
+        imageFiles.map((f) => this.cloudinaryService.uploadImage(f)),
       );
       uploadedImgs = uploads
         .map((u) => u?.secure_url)
@@ -52,6 +54,9 @@ export class ProductsService {
     }
     const imgs = Array.from(new Set([...baseImgs, ...uploadedImgs]));
     const productData = this.prepareProductPayload(dto);
+    const uploadedHomeImage = homeImageFile
+      ? await this.cloudinaryService.uploadImage(homeImageFile)
+      : undefined;
 
     const newProduct = new this.productModel({
       ...productData,
@@ -60,6 +65,9 @@ export class ProductsService {
         ? { merchandiseBadge: dto.merchandiseBadge }
         : {}),
       imgs,
+      ...(uploadedHomeImage?.secure_url
+        ? { homeImage: uploadedHomeImage.secure_url }
+        : {}),
       // New fields will be automatically included from productData
     });
     const savedProduct = await newProduct.save();
@@ -178,11 +186,13 @@ export class ProductsService {
     dto: UpdateProductDto,
     files?: Express.Multer.File[],
   ): Promise<Product> {
+    const imageFiles = files?.filter((file) => file.fieldname === 'imgs') ?? [];
+    const homeImageFile = files?.find((file) => file.fieldname === 'homeImage');
     const baseImgs = dto.existingImgs ?? dto.imgs ?? [];
     let uploadedImgs: string[] = [];
-    if (files?.length) {
+    if (imageFiles.length) {
       const uploads = await Promise.all(
-        files.map((f) => this.cloudinaryService.uploadImage(f)),
+        imageFiles.map((f) => this.cloudinaryService.uploadImage(f)),
       );
       uploadedImgs = uploads
         .map((u) => u?.secure_url)
@@ -196,6 +206,9 @@ export class ProductsService {
     }
 
     const productData = this.prepareProductPayload(dto, currentProduct);
+    const uploadedHomeImage = homeImageFile
+      ? await this.cloudinaryService.uploadImage(homeImageFile)
+      : undefined;
     const requestedMerchandiseBadge = dto.merchandiseBadge;
     const {
       category,
@@ -215,6 +228,9 @@ export class ProductsService {
             ? { merchandiseBadge }
             : {}),
         imgs,
+        ...(uploadedHomeImage?.secure_url
+          ? { homeImage: uploadedHomeImage.secure_url }
+          : {}),
         // New fields will be automatically included from productDataWithoutConditionalFields
       },
       $unset: {

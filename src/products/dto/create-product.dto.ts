@@ -313,24 +313,18 @@ export class CreateProductDto {
   // ============ NEW FIELDS ============
 
   @ApiPropertyOptional({
-    description: 'Product features array',
-    example: [
-      { name: 'Strategy', value: 'High' },
-      { name: 'Luck', value: 'Medium' },
-    ],
+    description: 'Product feature text array',
+    example: ['Premium cotton', 'Limited edition print'],
     type: 'array',
     items: {
-      type: 'object',
-      properties: {
-        name: { type: 'string' },
-        value: { type: 'string' },
-      },
+      type: 'string',
     },
   })
   @Transform(parseOptionalArray)
   @IsArray()
   @IsOptional()
-  productFeatures?: Record<string, any>[];
+  @IsString({ each: true })
+  productFeatures?: string[];
 
   @ApiPropertyOptional({
     description: 'Game subtitle',

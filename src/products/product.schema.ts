@@ -36,12 +36,6 @@ export enum ProductSize {
 }
 
 // New interfaces for nested objects
-export interface ProductFeature {
-  name: string;
-  value: string;
-  // Add other properties as needed
-}
-
 export interface BoxNumber {
   number: string;
   title: string;
@@ -151,8 +145,8 @@ export class Product {
 
   // ============ NEW FIELDS ============
 
-  @Prop({ type: [{ type: Object }], required: false })
-  productFeatures?: ProductFeature[];
+  @Prop({ type: [String], required: false })
+  productFeatures?: string[];
 
   @Prop({ required: false })
   gameSubtitle?: string;
