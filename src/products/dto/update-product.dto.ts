@@ -1,3 +1,4 @@
+// update-product.dto.ts
 import {
   IsArray,
   IsBoolean,
@@ -5,6 +6,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsObject,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
@@ -29,6 +31,26 @@ const parseOptionalArray = ({ value }: { value: unknown }) => {
       return Array.isArray(parsed) ? parsed : [value];
     } catch {
       return [value];
+    }
+  }
+
+  return undefined;
+};
+
+const parseOptionalObject = ({ value }: { value: unknown }) => {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  if (typeof value === 'object') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return undefined;
     }
   }
 
@@ -288,4 +310,94 @@ export class UpdateProductDto {
   @IsNumber()
   @IsOptional()
   ca_price?: number;
+
+  // ============ NEW FIELDS ============
+
+  @ApiPropertyOptional({
+    description: 'Product features array',
+    example: [
+      { name: 'Strategy', value: 'High' },
+      { name: 'Luck', value: 'Medium' },
+    ],
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        value: { type: 'string' },
+      },
+    },
+  })
+  @Transform(parseOptionalArray)
+  @IsArray()
+  @IsOptional()
+  productFeatures?: Record<string, any>[];
+
+  @ApiPropertyOptional({
+    description: 'Game subtitle',
+    example: "The World's Most Popular Board Game",
+  })
+  @IsString()
+  @IsOptional()
+  gameSubtitle?: string;
+
+  @ApiPropertyOptional({
+    description: 'Number of players',
+    example: '2-6',
+  })
+  @IsString()
+  @IsOptional()
+  players?: string;
+
+  @ApiPropertyOptional({
+    description: 'Age range for the game',
+    example: '8+',
+  })
+  @IsString()
+  @IsOptional()
+  age?: string;
+
+  @ApiPropertyOptional({
+    description: 'Game duration in minutes',
+    example: '60-180',
+  })
+  @IsString()
+  @IsOptional()
+  minutes?: string;
+
+  @ApiPropertyOptional({
+    description: 'Number of cards',
+    example: '32',
+  })
+  @IsString()
+  @IsOptional()
+  cards?: string;
+
+  @ApiPropertyOptional({
+    description: "What's in the box section",
+    example: {
+      title: "What's Included",
+      subtitle: 'Everything you need to play',
+      boxnumbers: [
+        { number: '1', title: 'Game Board', subtitle: 'Foldable board' },
+        { number: '2', title: 'Cards', subtitle: '32 property cards' },
+      ],
+    },
+  })
+  @Transform(parseOptionalObject)
+  @IsObject()
+  @IsOptional()
+  inTheBox?: {
+    title?: string;
+    subtitle?: string;
+    boxnumbers?: { number?: string; title?: string; subtitle?: string }[];
+  };
+
+  @ApiPropertyOptional({
+    description: 'Home image URL',
+    example: 'https://example.com/home-image.jpg',
+  })
+  @IsString()
+  @IsOptional()
+  homeImage?: string;
 }

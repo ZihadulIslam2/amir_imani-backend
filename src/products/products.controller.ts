@@ -1,3 +1,4 @@
+// products.controller.ts
 import {
   Body,
   Controller,
@@ -24,6 +25,7 @@ import {
   ApiParam,
   ApiConsumes,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
 import { ProductCategory } from './product.schema';
 
@@ -40,6 +42,77 @@ export class ProductsController {
       'When productType is marchandice, category is required. Cards cannot have a category.',
   })
   @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Product creation payload with new fields',
+    schema: {
+      type: 'object',
+      properties: {
+        productName: { type: 'string' },
+        price: { type: 'number' },
+        feature: { type: 'string' },
+        description: { type: 'string' },
+        productType: { type: 'string', enum: ['card', 'marchandice'] },
+        category: { type: 'string', enum: Object.values(ProductCategory) },
+        merchandiseBadge: { type: 'string' },
+        videoLink: { type: 'string' },
+        imgs: { type: 'array', items: { type: 'string', format: 'binary' } },
+        existingImgs: { type: 'array', items: { type: 'string' } },
+        color: { type: 'array', items: { type: 'string' } },
+        size: { type: 'array', items: { type: 'string' } },
+        quantity: { type: 'number' },
+        ruleTitle: { type: 'string' },
+        rulls: { type: 'array' },
+        boardanatomyTitle: { type: 'string' },
+        boardAnatomyDiscription: { type: 'string' },
+        passandplayTittle: { type: 'string' },
+        passandplay: { type: 'array' },
+        garmentTitle: { type: 'string' },
+        garmentsMATERIAL: { type: 'string' },
+        garmentWEIGHT: { type: 'string' },
+        garmentFit: { type: 'string' },
+        garmentPRINT: { type: 'string' },
+        garmentMADeIN: { type: 'string' },
+        garmentCARE: { type: 'string' },
+        addHome: { type: 'boolean' },
+        ca_price: { type: 'number' },
+        // New fields
+        productFeatures: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              value: { type: 'string' },
+            },
+          },
+        },
+        gameSubtitle: { type: 'string' },
+        players: { type: 'string' },
+        age: { type: 'string' },
+        minutes: { type: 'string' },
+        cards: { type: 'string' },
+        inTheBox: {
+          type: 'object',
+          properties: {
+            title: { type: 'string' },
+            subtitle: { type: 'string' },
+            boxnumbers: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  number: { type: 'string' },
+                  title: { type: 'string' },
+                  subtitle: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        homeImage: { type: 'string' },
+      },
+    },
+  })
   @ApiResponse({ status: 201, description: 'Product created successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid payload.' })
   async createProduct(
@@ -174,6 +247,77 @@ export class ProductsController {
     name: 'id',
     description: 'The MongoDB product ID',
     example: '60d21b4667d0d8992e610c85',
+  })
+  @ApiBody({
+    description: 'Product update payload with new fields',
+    schema: {
+      type: 'object',
+      properties: {
+        productName: { type: 'string' },
+        price: { type: 'number' },
+        feature: { type: 'string' },
+        description: { type: 'string' },
+        productType: { type: 'string', enum: ['card', 'marchandice'] },
+        category: { type: 'string', enum: Object.values(ProductCategory) },
+        merchandiseBadge: { type: 'string' },
+        videoLink: { type: 'string' },
+        imgs: { type: 'array', items: { type: 'string', format: 'binary' } },
+        existingImgs: { type: 'array', items: { type: 'string' } },
+        color: { type: 'array', items: { type: 'string' } },
+        size: { type: 'array', items: { type: 'string' } },
+        quantity: { type: 'number' },
+        ruleTitle: { type: 'string' },
+        rulls: { type: 'array' },
+        boardanatomyTitle: { type: 'string' },
+        boardAnatomyDiscription: { type: 'string' },
+        passandplayTittle: { type: 'string' },
+        passandplay: { type: 'array' },
+        garmentTitle: { type: 'string' },
+        garmentsMATERIAL: { type: 'string' },
+        garmentWEIGHT: { type: 'string' },
+        garmentFit: { type: 'string' },
+        garmentPRINT: { type: 'string' },
+        garmentMADeIN: { type: 'string' },
+        garmentCARE: { type: 'string' },
+        addHome: { type: 'boolean' },
+        ca_price: { type: 'number' },
+        // New fields
+        productFeatures: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              value: { type: 'string' },
+            },
+          },
+        },
+        gameSubtitle: { type: 'string' },
+        players: { type: 'string' },
+        age: { type: 'string' },
+        minutes: { type: 'string' },
+        cards: { type: 'string' },
+        inTheBox: {
+          type: 'object',
+          properties: {
+            title: { type: 'string' },
+            subtitle: { type: 'string' },
+            boxnumbers: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  number: { type: 'string' },
+                  title: { type: 'string' },
+                  subtitle: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        homeImage: { type: 'string' },
+      },
+    },
   })
   @ApiResponse({ status: 200, description: 'Product updated successfully.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })

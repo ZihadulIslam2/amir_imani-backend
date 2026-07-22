@@ -1,3 +1,4 @@
+// product.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
@@ -32,6 +33,25 @@ export enum ProductSize {
   L = 'l',
   XL = 'xl',
   XXL = 'xxl',
+}
+
+// New interfaces for nested objects
+export interface ProductFeature {
+  name: string;
+  value: string;
+  // Add other properties as needed
+}
+
+export interface BoxNumber {
+  number: string;
+  title: string;
+  subtitle: string;
+}
+
+export interface InTheBox {
+  title: string;
+  subtitle: string;
+  boxnumbers: BoxNumber[];
 }
 
 @Schema({ timestamps: true })
@@ -128,6 +148,32 @@ export class Product {
 
   @Prop({ required: false })
   ca_price?: number;
+
+  // ============ NEW FIELDS ============
+
+  @Prop({ type: [{ type: Object }], required: false })
+  productFeatures?: ProductFeature[];
+
+  @Prop({ required: false })
+  gameSubtitle?: string;
+
+  @Prop({ required: false })
+  players?: string;
+
+  @Prop({ required: false })
+  age?: string;
+
+  @Prop({ required: false })
+  minutes?: string;
+
+  @Prop({ required: false })
+  cards?: string;
+
+  @Prop({ type: Object, required: false })
+  inTheBox?: InTheBox;
+
+  @Prop({ required: false })
+  homeImage?: string;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

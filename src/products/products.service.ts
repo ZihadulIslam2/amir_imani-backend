@@ -1,3 +1,4 @@
+// products.service.ts
 import {
   BadRequestException,
   Injectable,
@@ -59,10 +60,11 @@ export class ProductsService {
         ? { merchandiseBadge: dto.merchandiseBadge }
         : {}),
       imgs,
+      // New fields will be automatically included from productData
     });
     const savedProduct = await newProduct.save();
 
-    // // Add job to queue to send notifications to all subscribers
+    // Uncomment if you want to enable notifications
     // await this.productNotificationQueue.add(
     //   'notify-subscribers',
     //   {
@@ -202,6 +204,7 @@ export class ProductsService {
     } = productData;
     const shouldUnsetCategory = category === undefined;
     const shouldUnsetMerchandiseBadge = merchandiseBadge === undefined;
+
     const updateQuery = {
       $set: {
         ...productDataWithoutConditionalFields,
@@ -212,12 +215,14 @@ export class ProductsService {
             ? { merchandiseBadge }
             : {}),
         imgs,
+        // New fields will be automatically included from productDataWithoutConditionalFields
       },
       $unset: {
         ...(shouldUnsetCategory ? { category: '' } : {}),
         ...(shouldUnsetMerchandiseBadge ? { merchandiseBadge: '' } : {}),
       },
     };
+
     const updatedProduct = await this.productModel
       .findByIdAndUpdate(id, updateQuery, {
         new: true,
@@ -280,10 +285,32 @@ export class ProductsService {
       );
     }
 
+    // Extract new fields to ensure they're properly handled
+    const {
+      productFeatures,
+      gameSubtitle,
+      players,
+      age,
+      minutes,
+      cards,
+      inTheBox,
+      homeImage,
+      ...rest
+    } = plainDto;
+
     return {
-      ...plainDto,
+      ...rest,
       category,
       merchandiseBadge,
+      // Include new fields if they exist
+      ...(productFeatures !== undefined && { productFeatures }),
+      ...(gameSubtitle !== undefined && { gameSubtitle }),
+      ...(players !== undefined && { players }),
+      ...(age !== undefined && { age }),
+      ...(minutes !== undefined && { minutes }),
+      ...(cards !== undefined && { cards }),
+      ...(inTheBox !== undefined && { inTheBox }),
+      ...(homeImage !== undefined && { homeImage }),
     };
   }
 }

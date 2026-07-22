@@ -114,6 +114,21 @@
               "type": "text"
             },
             {
+              "key": "productType",
+              "value": "marchandice",
+              "type": "text"
+            },
+            {
+              "key": "category",
+              "value": "APPAREL",
+              "type": "text"
+            },
+            {
+              "key": "merchandiseBadge",
+              "value": "NEW_ARRIVAL",
+              "type": "text"
+            },
+            {
               "key": "feature",
               "value": "Non-slip, Eco-friendly, Durable",
               "type": "text"
@@ -132,6 +147,21 @@
               "key": "img",
               "type": "file",
               "src": []
+            },
+            {
+              "key": "color",
+              "value": "[\"black\", \"purple\", \"blue\"]",
+              "type": "text"
+            },
+            {
+              "key": "size",
+              "value": "[\"s\", \"m\", \"l\"]",
+              "type": "text"
+            },
+            {
+              "key": "quantity",
+              "value": "100",
+              "type": "text"
             },
             {
               "key": "ruleTitle",
@@ -207,6 +237,46 @@
               "key": "ca_price",
               "value": "6499",
               "type": "text"
+            },
+            {
+              "key": "gameSubtitle",
+              "value": "The Ultimate Yoga Experience",
+              "type": "text"
+            },
+            {
+              "key": "players",
+              "value": "1-4",
+              "type": "text"
+            },
+            {
+              "key": "age",
+              "value": "12+",
+              "type": "text"
+            },
+            {
+              "key": "minutes",
+              "value": "30-60",
+              "type": "text"
+            },
+            {
+              "key": "cards",
+              "value": "48",
+              "type": "text"
+            },
+            {
+              "key": "productFeatures",
+              "value": "[{\"name\":\"Material\",\"value\":\"Eco-friendly PVC\"},{\"name\":\"Thickness\",\"value\":\"6mm\"},{\"name\":\"Weight\",\"value\":\"2.5kg\"}]",
+              "type": "text"
+            },
+            {
+              "key": "inTheBox",
+              "value": "{\"title\":\"What's Included\",\"subtitle\":\"Everything you need for your practice\",\"boxnumbers\":[{\"number\":\"1\",\"title\":\"Yoga Mat\",\"subtitle\":\"Premium 6mm mat\"},{\"number\":\"2\",\"title\":\"Carrying Strap\",\"subtitle\":\"Adjustable strap\"},{\"number\":\"3\",\"title\":\"Guide Booklet\",\"subtitle\":\"Beginner's guide\"}]}",
+              "type": "text"
+            },
+            {
+              "key": "homeImage",
+              "value": "https://example.com/yoga-mat-home.jpg",
+              "type": "text"
             }
           ]
         },
@@ -215,12 +285,12 @@
           "host": ["{{base_url}}"],
           "path": ["products"]
         },
-        "description": "Create a new product with image upload"
+        "description": "Create a new product with image upload and all new fields"
       },
       "response": []
     },
     {
-      "name": "Create Product 2",
+      "name": "Create Product 2 (Card Type)",
       "event": [
         {
           "listen": "test",
@@ -245,27 +315,32 @@
           "formdata": [
             {
               "key": "productName",
-              "value": "Stainless Steel Water Bottle",
+              "value": "Gold Tarot Card Deck",
               "type": "text"
             },
             {
               "key": "price",
-              "value": "2499",
+              "value": "2999",
+              "type": "text"
+            },
+            {
+              "key": "productType",
+              "value": "card",
               "type": "text"
             },
             {
               "key": "feature",
-              "value": "Insulated, Leak-proof, Durable",
+              "value": "Premium Gold Foil, 78 Cards, Guidebook Included",
               "type": "text"
             },
             {
               "key": "description",
-              "value": "Premium stainless steel water bottle keeps drinks hot for 24 hours or cold for 48 hours. Capacity: 1L, BPA-free, environmentally friendly.",
+              "value": "A complete 78-card tarot deck with gorgeous gold foil details, silver gilded edges, and a comprehensive 120-page guidebook. Perfect for beginners and experienced readers alike.",
               "type": "text"
             },
             {
               "key": "videoLink",
-              "value": "https://www.youtube.com/watch?v=bottle-review",
+              "value": "https://www.youtube.com/watch?v=tarot-review",
               "type": "text"
             },
             {
@@ -274,13 +349,58 @@
               "src": []
             },
             {
+              "key": "quantity",
+              "value": "50",
+              "type": "text"
+            },
+            {
+              "key": "gameSubtitle",
+              "value": "The Complete Tarot Experience",
+              "type": "text"
+            },
+            {
+              "key": "players",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "age",
+              "value": "16+",
+              "type": "text"
+            },
+            {
+              "key": "minutes",
+              "value": "15-45",
+              "type": "text"
+            },
+            {
+              "key": "cards",
+              "value": "78",
+              "type": "text"
+            },
+            {
+              "key": "productFeatures",
+              "value": "[{\"name\":\"Material\",\"value\":\"Premium Card Stock\"},{\"name\":\"Finish\",\"value\":\"Gold Foil\"},{\"name\":\"Edges\",\"value\":\"Silver Gilded\"}]",
+              "type": "text"
+            },
+            {
+              "key": "inTheBox",
+              "value": "{\"title\":\"What's Included\",\"subtitle\":\"Everything you need for your reading\",\"boxnumbers\":[{\"number\":\"1\",\"title\":\"Tarot Cards\",\"subtitle\":\"78 full-color cards\"},{\"number\":\"2\",\"title\":\"Guidebook\",\"subtitle\":\"120-page instruction book\"},{\"number\":\"3\",\"title\":\"Velvet Pouch\",\"subtitle\":\"Premium storage bag\"}]}",
+              "type": "text"
+            },
+            {
+              "key": "homeImage",
+              "value": "https://example.com/tarot-home.jpg",
+              "type": "text"
+            },
+            {
               "key": "addHome",
-              "value": "false",
+              "value": "true",
               "type": "text"
             },
             {
               "key": "ca_price",
-              "value": "3499",
+              "value": "3999",
               "type": "text"
             }
           ]
@@ -290,12 +410,12 @@
           "host": ["{{base_url}}"],
           "path": ["products"]
         },
-        "description": "Create second product"
+        "description": "Create a card type product with all new fields"
       },
       "response": []
     },
     {
-      "name": "Create Product 3",
+      "name": "Create Product 3 (Merchandise with Badge)",
       "event": [
         {
           "listen": "test",
@@ -329,6 +449,21 @@
               "type": "text"
             },
             {
+              "key": "productType",
+              "value": "marchandice",
+              "type": "text"
+            },
+            {
+              "key": "category",
+              "value": "ELECTRONICS",
+              "type": "text"
+            },
+            {
+              "key": "merchandiseBadge",
+              "value": "BEST_SELLER",
+              "type": "text"
+            },
+            {
               "key": "feature",
               "value": "Noise-cancelling, 30-hour battery, Comfortable fit",
               "type": "text"
@@ -349,6 +484,16 @@
               "src": []
             },
             {
+              "key": "color",
+              "value": "[\"black\", \"white\", \"silver\"]",
+              "type": "text"
+            },
+            {
+              "key": "quantity",
+              "value": "200",
+              "type": "text"
+            },
+            {
               "key": "addHome",
               "value": "true",
               "type": "text"
@@ -356,6 +501,16 @@
             {
               "key": "ca_price",
               "value": "10999",
+              "type": "text"
+            },
+            {
+              "key": "productFeatures",
+              "value": "[{\"name\":\"Battery Life\",\"value\":\"30 hours\"},{\"name\":\"Noise Cancellation\",\"value\":\"Active ANC\"},{\"name\":\"Bluetooth\",\"value\":\"5.0\"}]",
+              "type": "text"
+            },
+            {
+              "key": "homeImage",
+              "value": "https://example.com/headphones-home.jpg",
               "type": "text"
             }
           ]
@@ -365,7 +520,7 @@
           "host": ["{{base_url}}"],
           "path": ["products"]
         },
-        "description": "Create third product"
+        "description": "Create third product with new fields"
       },
       "response": []
     },
@@ -407,119 +562,163 @@
           "formdata": [
             {
               "key": "productName",
-              "value": "Updated Product Name",
+              "value": "Updated Yoga Mat Pro",
               "type": "text"
             },
             {
               "key": "price",
-              "value": "149",
+              "value": "5999",
               "type": "text"
             },
             {
               "key": "feature",
-              "value": "New features added",
+              "value": "Non-slip, Eco-friendly, Durable, Extra Thick",
               "type": "text"
             },
             {
               "key": "description",
-              "value": "Updated description with more details",
+              "value": "Professional grade yoga mat made from sustainable materials. Extra thick 8mm for maximum comfort. Perfect for yoga, pilates, and meditation.",
+              "type": "text"
+            },
+            {
+              "key": "videoLink",
+              "value": "https://www.youtube.com/watch?v=yoga-mat-pro",
               "type": "text"
             },
             {
               "key": "img",
               "type": "file",
-              "src": [],
-              "description": "Optional: Upload new image"
+              "src": []
+            },
+            {
+              "key": "color",
+              "value": "[\"black\", \"purple\", \"blue\", \"green\"]",
+              "type": "text"
+            },
+            {
+              "key": "size",
+              "value": "[\"s\", \"m\", \"l\", \"xl\"]",
+              "type": "text"
+            },
+            {
+              "key": "quantity",
+              "value": "150",
+              "type": "text"
             },
             {
               "key": "ruleTitle",
               "value": "How to Play (Updated)",
-              "type": "text",
-              "description": "Optional: Rule title"
+              "type": "text"
             },
             {
               "key": "rulls",
-              "value": "[{\"title\":\"Setup\",\"description\":\"Updated setup instructions\"}]",
-              "type": "text",
-              "description": "Optional: Array of rule objects"
+              "value": "[{\"title\":\"Setup\",\"description\":\"Updated setup instructions\"},{\"title\":\"Gameplay\",\"description\":\"Updated gameplay rules\"}]",
+              "type": "text"
             },
             {
               "key": "boardanatomyTitle",
-              "value": "Board Layout",
-              "type": "text",
-              "description": "Optional: Board anatomy title"
+              "value": "Board Layout (Updated)",
+              "type": "text"
             },
             {
               "key": "boardAnatomyDiscription",
-              "value": "Updated board description",
-              "type": "text",
-              "description": "Optional: Board anatomy description"
+              "value": "Updated board description with more details",
+              "type": "text"
             },
             {
               "key": "passandplayTittle",
-              "value": "Pass & Play Mode",
-              "type": "text",
-              "description": "Optional: Pass-and-play title"
+              "value": "Pass & Play Mode (Updated)",
+              "type": "text"
             },
             {
               "key": "passandplay",
-              "value": "[{\"message\":\"Updated welcome message\",\"name\":\"Player 1\",\"type\":\"text\"}]",
-              "type": "text",
-              "description": "Optional: Pass-and-play messages"
+              "value": "[{\"message\":\"Welcome to the updated game!\",\"name\":\"Player 1\",\"type\":\"text\"}]",
+              "type": "text"
             },
             {
               "key": "garmentTitle",
-              "value": "Premium Hoodie",
-              "type": "text",
-              "description": "Optional: Garment title"
+              "value": "Premium Yoga Hoodie",
+              "type": "text"
             },
             {
               "key": "garmentsMATERIAL",
-              "value": "80% Cotton, 20% Polyester",
-              "type": "text",
-              "description": "Optional: Garment material"
+              "value": "95% Organic Cotton, 5% Spandex",
+              "type": "text"
             },
             {
               "key": "garmentWEIGHT",
-              "value": "300 GSM",
-              "type": "text",
-              "description": "Optional: Garment weight"
+              "value": "280 GSM",
+              "type": "text"
             },
             {
               "key": "garmentFit",
-              "value": "Oversized Fit",
-              "type": "text",
-              "description": "Optional: Garment fit"
+              "value": "Athletic Fit",
+              "type": "text"
             },
             {
               "key": "garmentPRINT",
               "value": "Embroidery",
-              "type": "text",
-              "description": "Optional: Garment print type"
+              "type": "text"
             },
             {
               "key": "garmentMADeIN",
               "value": "Bangladesh",
-              "type": "text",
-              "description": "Optional: Garment origin"
+              "type": "text"
             },
             {
               "key": "garmentCARE",
-              "value": "Machine wash cold, tumble dry low",
-              "type": "text",
-              "description": "Optional: Garment care instructions"
+              "value": "Machine wash cold, tumble dry low, do not bleach",
+              "type": "text"
             },
             {
               "key": "addHome",
               "value": "true",
-              "type": "text",
-              "description": "Optional: Show on home page"
+              "type": "text"
             },
             {
               "key": "ca_price",
-              "value": "199",
-              "type": "text",
-              "description": "Optional: Canadian price"
+              "value": "7999",
+              "type": "text"
+            },
+            {
+              "key": "gameSubtitle",
+              "value": "The Ultimate Yoga Experience - Pro Edition",
+              "type": "text"
+            },
+            {
+              "key": "players",
+              "value": "1-6",
+              "type": "text"
+            },
+            {
+              "key": "age",
+              "value": "10+",
+              "type": "text"
+            },
+            {
+              "key": "minutes",
+              "value": "30-90",
+              "type": "text"
+            },
+            {
+              "key": "cards",
+              "value": "60",
+              "type": "text"
+            },
+            {
+              "key": "productFeatures",
+              "value": "[{\"name\":\"Material\",\"value\":\"Premium Eco-friendly PVC\"},{\"name\":\"Thickness\",\"value\":\"8mm\"},{\"name\":\"Weight\",\"value\":\"3.0kg\"},{\"name\":\"Non-slip\",\"value\":\"Yes\"}]",
+              "type": "text"
+            },
+            {
+              "key": "inTheBox",
+              "value": "{\"title\":\"What's Included - Pro Edition\",\"subtitle\":\"Everything you need for advanced practice\",\"boxnumbers\":[{\"number\":\"1\",\"title\":\"Yoga Mat\",\"subtitle\":\"Premium 8mm mat\"},{\"number\":\"2\",\"title\":\"Carrying Strap\",\"subtitle\":\"Adjustable strap with extra padding\"},{\"number\":\"3\",\"title\":\"Guide Booklet\",\"subtitle\":\"Advanced techniques guide\"},{\"number\":\"4\",\"title\":\"Alignment Towel\",\"subtitle\":\"Microfiber towel\"}]}",
+              "type": "text"
+            },
+            {
+              "key": "homeImage",
+              "value": "https://example.com/yoga-mat-pro-home.jpg",
+              "type": "text"
             }
           ]
         },
@@ -528,7 +727,7 @@
           "host": ["{{base_url}}"],
           "path": ["products", "{{product_id}}"]
         },
-        "description": "Update an existing product with optional image upload"
+        "description": "Update an existing product with all new fields"
       },
       "response": []
     },
