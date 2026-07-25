@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  Patch,
   Post,
   Req,
   Res,
@@ -13,8 +15,15 @@ import { Role } from '../auth/decorators/role.decorator';
 import { sendResponse } from '../common/utils/sendResponse';
 import { FortuneTellingService } from './fortune-telling.service';
 import { RevealFortuneDto } from './dto/reveal-fortune.dto';
+import { UpdateFortuneDefinitionDto } from './dto/update-fortune-definition.dto';
 import type { Response, Request } from 'express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 
 @ApiTags('Fortune Telling')
 @Controller('fortune-telling')
@@ -73,6 +82,61 @@ export class FortuneTellingController {
       success: true,
       message: 'All fortune history retrieved successfully',
       data: history,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Role('admin')
+  @ApiBearerAuth('JWT-auth')
+  @Get('admin/definitions')
+  @ApiOperation({ summary: 'Retrieve all fortune definitions (Admin only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Fortune definitions retrieved successfully.',
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden. Requires admin role.' })
+  async getAllDefinitions(@Res() res: Response) {
+    const definitions =
+      await this.fortuneTellingService.getAllFortuneDefinitions();
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: 'Fortune definitions retrieved successfully',
+      data: definitions,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Role('admin')
+  @ApiBearerAuth('JWT-auth')
+  @Patch('admin/definitions/:id')
+  @ApiOperation({ summary: 'Update a fortune definition (Admin only)' })
+  @ApiParam({
+    name: 'id',
+    description: 'The MongoDB fortune definition ID',
+    example: '60d21b4667d0d8992e610c85',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Fortune definition updated successfully.',
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden. Requires admin role.' })
+  async updateDefinition(
+    @Param('id') id: string,
+    @Body() dto: UpdateFortuneDefinitionDto,
+    @Res() res: Response,
+  ) {
+    const definition = await this.fortuneTellingService.updateFortuneDefinition(
+      id,
+      dto,
+    );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: 'Fortune definition updated successfully',
+      data: definition,
     });
   }
 }
