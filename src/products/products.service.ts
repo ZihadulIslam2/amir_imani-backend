@@ -68,7 +68,10 @@ export class ProductsService {
       ...(uploadedHomeImage?.secure_url
         ? { homeImage: uploadedHomeImage.secure_url }
         : {}),
-      // New fields will be automatically included from productData
+      // Keep this explicit so multipart and JSON product creation both persist it.
+      ...(dto.previousPrice !== undefined
+        ? { previousPrice: dto.previousPrice }
+        : {}),
     });
     const savedProduct = await newProduct.save();
 
@@ -231,7 +234,10 @@ export class ProductsService {
         ...(uploadedHomeImage?.secure_url
           ? { homeImage: uploadedHomeImage.secure_url }
           : {}),
-        // New fields will be automatically included from productDataWithoutConditionalFields
+        // Keep this explicit so multipart and JSON product edits both persist it.
+        ...(dto.previousPrice !== undefined
+          ? { previousPrice: dto.previousPrice }
+          : {}),
       },
       $unset: {
         ...(shouldUnsetCategory ? { category: '' } : {}),

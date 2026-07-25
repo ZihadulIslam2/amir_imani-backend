@@ -76,6 +76,15 @@ export class UpdateProductDto {
   price?: number;
 
   @ApiPropertyOptional({
+    description: 'Optional previous price shown with a strikethrough',
+    example: 29.99,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  previousPrice?: number;
+
+  @ApiPropertyOptional({
     description: 'A short feature highlight of the product',
     example: 'Handmade, Premium Gold Foil',
   })

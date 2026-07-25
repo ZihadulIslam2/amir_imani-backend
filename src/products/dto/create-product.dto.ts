@@ -75,6 +75,15 @@ export class CreateProductDto {
   @IsNotEmpty()
   price: number;
 
+  @ApiPropertyOptional({
+    description: 'Optional previous price shown with a strikethrough',
+    example: 29.99,
+  })
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  previousPrice?: number;
+
   @ApiProperty({
     description: 'A short feature highlight of the product',
     example: 'Handmade, Premium Gold Foil',

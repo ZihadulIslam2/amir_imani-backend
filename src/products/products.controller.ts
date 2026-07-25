@@ -49,6 +49,7 @@ export class ProductsController {
       properties: {
         productName: { type: 'string' },
         price: { type: 'number' },
+        previousPrice: { type: 'number', description: 'Optional previous price' },
         feature: { type: 'string' },
         description: { type: 'string' },
         productType: { type: 'string', enum: ['card', 'marchandice'] },
@@ -249,6 +250,7 @@ export class ProductsController {
       properties: {
         productName: { type: 'string' },
         price: { type: 'number' },
+        previousPrice: { type: 'number', description: 'Optional previous price' },
         feature: { type: 'string' },
         description: { type: 'string' },
         productType: { type: 'string', enum: ['card', 'marchandice'] },

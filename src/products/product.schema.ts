@@ -56,6 +56,10 @@ export class Product {
   @Prop({ required: true })
   price: number;
 
+  // Previous price in the same currency as the product's active price.
+  @Prop({ type: Number, required: false, min: 0 })
+  previousPrice?: number;
+
   @Prop({
     type: String,
     enum: ProductType,
