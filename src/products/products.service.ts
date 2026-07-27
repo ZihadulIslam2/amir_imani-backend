@@ -72,6 +72,10 @@ export class ProductsService {
       ...(dto.previousPrice !== undefined
         ? { previousPrice: dto.previousPrice }
         : {}),
+      // Keep this explicit so JSON and multipart product creation both persist it.
+      ...(dto.isPreOrder !== undefined
+        ? { isPreOrder: dto.isPreOrder }
+        : {}),
     });
     const savedProduct = await newProduct.save();
 
@@ -237,6 +241,10 @@ export class ProductsService {
         // Keep this explicit so multipart and JSON product edits both persist it.
         ...(dto.previousPrice !== undefined
           ? { previousPrice: dto.previousPrice }
+          : {}),
+        // Keep this explicit so JSON and multipart product edits both persist it.
+        ...(dto.isPreOrder !== undefined
+          ? { isPreOrder: dto.isPreOrder }
           : {}),
       },
       $unset: {

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -22,10 +23,10 @@ export class PreordersService {
 
   async createPreorder(userId: string, productId: string) {
     const [user, product] = await Promise.all([
-      this.userModel.findById(userId).select('firstName lastName email').lean(),
+      this.userModel.findById(userId).select('firstName lastName email phoneNum').lean(),
       this.productModel
         .findById(productId)
-        .select('productName productType category')
+        .select('productName productType category imgs isPreOrder')
         .lean(),
     ]);
 
@@ -37,27 +38,39 @@ export class PreordersService {
       throw new NotFoundException('Product not found');
     }
 
+    if (!product.isPreOrder) {
+      throw new BadRequestException('This product is not available for pre-order');
+    }
+
     const existing = await this.preorderModel.findOne({
       userId: new Types.ObjectId(userId),
       productId: new Types.ObjectId(productId),
     });
 
     if (existing) {
-      return existing;
+      throw new ConflictException('You have already pre-ordered this product');
     }
 
-    const preorder = await this.preorderModel.create({
-      userId: new Types.ObjectId(userId),
-      productId: new Types.ObjectId(productId),
-      userName: `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
-      userEmail: user.email,
-      productName: product.productName,
-      productType: product.productType,
-      category: product.category,
-      status: PreorderStatus.PENDING,
-    });
-
-    return preorder;
+    try {
+      return await this.preorderModel.create({
+        userId: new Types.ObjectId(userId),
+        productId: new Types.ObjectId(productId),
+        userName: `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim(),
+        userEmail: user.email,
+        userPhone: user.phoneNum,
+        productName: product.productName,
+        productImage: product.imgs?.[0],
+        productType: product.productType,
+        category: product.category,
+        status: PreorderStatus.PENDING,
+      });
+    } catch (error) {
+      // The unique index is the final guard if two requests arrive at once.
+      if ((error as { code?: number }).code === 11000) {
+        throw new ConflictException('You have already pre-ordered this product');
+      }
+      throw error;
+    }
   }
 
   async getAllPreorders(search?: string, status?: string) {
@@ -75,7 +88,51 @@ export class PreordersService {
       ];
     }
 
-    return this.preorderModel.find(query).sort({ createdAt: -1 }).lean();
+    // Use lookups instead of only Mongoose populate so legacy preorder rows also
+    // consistently return the product image and current customer contact details.
+    return this.preorderModel.aggregate([
+      { $match: query },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'productId',
+          foreignField: '_id',
+          as: 'product',
+        },
+      },
+      { $unwind: { path: '$product', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          productId: {
+            $cond: [
+              { $ne: ['$product', null] },
+              {
+                _id: '$product._id',
+                productName: '$product.productName',
+                imgs: { $ifNull: ['$product.imgs', []] },
+              },
+              '$productId',
+            ],
+          },
+          productImage: {
+            $ifNull: ['$productImage', { $arrayElemAt: ['$product.imgs', 0] }],
+          },
+          userPhone: { $ifNull: ['$userPhone', '$user.phoneNum'] },
+          userEmail: { $ifNull: ['$userEmail', '$user.email'] },
+        },
+      },
+      { $project: { product: 0, user: 0 } },
+      { $sort: { createdAt: -1 } },
+    ]);
   }
 
   async updatePreorderStatus(preorderId: string, status: PreorderStatus) {

@@ -306,10 +306,19 @@ export class UpdateProductDto {
     example: false,
     default: false,
   })
-  @Type(() => Boolean)
+  @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
   @IsOptional()
   addHome?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Whether this product should be sold as a pre-order',
+    example: false,
+  })
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  @IsOptional()
+  isPreOrder?: boolean;
 
   @ApiPropertyOptional({
     description: 'Canadian price of the product',

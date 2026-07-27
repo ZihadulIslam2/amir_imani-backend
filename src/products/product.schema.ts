@@ -144,6 +144,9 @@ export class Product {
   @Prop({ required: false, default: false })
   addHome?: boolean;
 
+  @Prop({ required: false, default: false })
+  isPreOrder?: boolean;
+
   @Prop({ required: false })
   ca_price?: number;
 

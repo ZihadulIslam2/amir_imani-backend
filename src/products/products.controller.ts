@@ -75,6 +75,7 @@ export class ProductsController {
         garmentMADeIN: { type: 'string' },
         garmentCARE: { type: 'string' },
         addHome: { type: 'boolean' },
+        isPreOrder: { type: 'boolean' },
         ca_price: { type: 'number' },
         // New fields
         productFeatures: {
@@ -276,6 +277,7 @@ export class ProductsController {
         garmentMADeIN: { type: 'string' },
         garmentCARE: { type: 'string' },
         addHome: { type: 'boolean' },
+        isPreOrder: { type: 'boolean' },
         ca_price: { type: 'number' },
         // New fields
         productFeatures: {

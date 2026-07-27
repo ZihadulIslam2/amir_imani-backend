@@ -26,6 +26,12 @@ export class Preorder {
   userEmail: string;
 
   @Prop({ trim: true })
+  userPhone?: string;
+
+  @Prop({ trim: true })
+  productImage?: string;
+
+  @Prop({ trim: true })
   productType?: string;
 
   @Prop({ trim: true })
