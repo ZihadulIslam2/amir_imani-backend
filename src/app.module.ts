@@ -21,6 +21,7 @@ import { CustomerModule } from './customers/customer.module';
 import { OrderModule } from './orders/order.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { SubscribersModule } from './subscribers/subscribers.module';
+import { PreordersModule } from './preorders/preorders.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { SubscribersModule } from './subscribers/subscribers.module';
     OrderModule,
     ReviewsModule,
     SubscribersModule,
+    PreordersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
