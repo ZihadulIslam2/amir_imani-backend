@@ -3,8 +3,10 @@ import { UserController } from './user.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './user.schema';
 import { UserService } from '../user/user.service';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 @Module({
   imports: [
+    CloudinaryModule,
     MongooseModule.forFeature([
       {
         name: User.name,

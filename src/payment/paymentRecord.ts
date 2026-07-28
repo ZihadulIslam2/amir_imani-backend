@@ -32,6 +32,11 @@ class PurchasedItem {
   @Prop({ required: true })
   price: number;
 
+  // Item prices are stored in USD; the order total is stored in `currency`.
+  // Keeping this explicit prevents clients from showing an item price as CAD.
+  @Prop({ type: String, default: 'usd' })
+  currency: string;
+
   @Prop({ required: true })
   quantity: number;
 

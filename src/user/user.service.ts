@@ -4,11 +4,13 @@ import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
 import * as bcrypt from 'bcrypt';
 import { IUser } from './user.interface';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) readonly userModel: Model<UserDocument>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async create(data: Partial<User>): Promise<UserDocument> {
@@ -36,14 +38,24 @@ export class UserService {
   async updateUser(
     id: string,
     updateData: { [key: string]: any },
+    avatarFile?: Express.Multer.File,
   ): Promise<IUser | null> {
+    const avatarUpload = avatarFile
+      ? await this.cloudinaryService.uploadImage(avatarFile)
+      : null;
     const updatedUser = await this.userModel.findByIdAndUpdate(
       id,
-      { $set: updateData }, // ✅ ensures nested fields like verificationInfo.resetOtp are properly updated
+      {
+        $set: {
+          ...updateData,
+          ...(avatarUpload?.secure_url && { avatar: avatarUpload.secure_url }),
+        },
+      },
       {
         new: true, // return updated document
         runValidators: true, // validate schema rules on update
-        select: '_id firstName lastName email role verificationInfo', // optional: select what you want
+        select:
+          '_id firstName lastName email role avatar phoneNum address dateOfBirth gender',
       },
     );
 

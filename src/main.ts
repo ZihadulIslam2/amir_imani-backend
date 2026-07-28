@@ -14,6 +14,8 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000',
       'http://localhost:3001',
+      'http://localhost:3002',
+      'http://localhost:3003',
       'https://yourfrontenddomain.com',
       'https://amir-imani2025-dashboard.vercel.app',
       'https://amir-imani20.vercel.app',

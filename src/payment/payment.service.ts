@@ -68,6 +68,7 @@ export class PaymentService {
       productId: string;
       productName: string;
       price: number;
+      currency: string;
       quantity: number;
       color?: string;
       size?: string;
@@ -107,6 +108,7 @@ export class PaymentService {
           productId: product._id.toString(),
           productName: product.productName,
           price: priceInUsd,
+          currency: 'usd',
           quantity: item.quantity,
           color: item.color,
           size: item.size,
@@ -147,6 +149,7 @@ export class PaymentService {
           productId: product._id.toString(),
           productName: product.productName,
           price: product.price,
+          currency: 'usd',
           quantity: cartItem.quantity,
           color: cartItem.color,
           size: cartItem.size,
