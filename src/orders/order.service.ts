@@ -140,6 +140,7 @@ export class OrderService {
               subtotal: 1,
               shippingCost: 1,
               discountAmount: 1,
+              shippingAddress: 1,
               paymentStatus: 1,
               orderStatus: 1,
             },
