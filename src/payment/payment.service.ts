@@ -75,27 +75,44 @@ export class PaymentService {
 
     let subtotalUsd = 0;
     let cartId: string;
+    const exchangeRate = parseFloat(process.env.CAD_EXCHANGE_RATE || '1.44');
 
     if (dto.items && dto.items.length > 0) {
       // Inline items flow: look up product prices, create cart record
       for (const item of dto.items) {
         const product = await this.productModel.findById(item.productId);
-        if (!product || !product.price) continue;
+        if (!product) {
+          throw new BadRequestException(
+            `Product with ID ${item.productId} was not found`,
+          );
+        }
+
+        const usdPrice = Number(product.price);
+        const cadPrice = Number(product.ca_price);
+        const hasUsdPrice = Number.isFinite(usdPrice) && usdPrice > 0;
+        const hasCadPrice = Number.isFinite(cadPrice) && cadPrice > 0;
+
+        if (!hasUsdPrice && !hasCadPrice) {
+          throw new BadRequestException(
+            `Product with ID ${item.productId} does not have a valid price`,
+          );
+        }
+
+        // Prices and coupon thresholds are calculated in USD. Some catalogue
+        // entries only have a Canadian price, so convert that value instead of
+        // treating the product as missing from the cart.
+        const priceInUsd = hasUsdPrice ? usdPrice : cadPrice / exchangeRate;
 
         items.push({
           productId: product._id.toString(),
           productName: product.productName,
-          price: product.price,
+          price: priceInUsd,
           quantity: item.quantity,
           color: item.color,
           size: item.size,
         });
 
-        subtotalUsd += product.price * item.quantity;
-      }
-
-      if (items.length === 0) {
-        throw new BadRequestException('No valid products in cart');
+        subtotalUsd += priceInUsd * item.quantity;
       }
 
       const cart = await this.cartService.createCart({
@@ -185,8 +202,6 @@ export class PaymentService {
     }
 
     // 4. Calculate shipping cost
-    const exchangeRate = parseFloat(process.env.CAD_EXCHANGE_RATE || '1.44');
-
     const shipping = this.shippingService.calculateShipping(
       country,
       subtotalUsd,
