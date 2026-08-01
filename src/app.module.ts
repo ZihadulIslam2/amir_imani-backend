@@ -22,6 +22,7 @@ import { OrderModule } from './orders/order.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { SubscribersModule } from './subscribers/subscribers.module';
 import { PreordersModule } from './preorders/preorders.module';
+import { ProductNotificationsModule } from './product-notifications/product-notifications.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { PreordersModule } from './preorders/preorders.module';
     ReviewsModule,
     SubscribersModule,
     PreordersModule,
+    ProductNotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
