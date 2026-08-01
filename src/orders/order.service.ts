@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, PipelineStage } from 'mongoose';
 import { PaymentRecord } from '../payment/paymentRecord';
@@ -41,7 +45,8 @@ export class OrderService {
     const createdAt: Record<string, Date> = {};
     const startDate = filters.startDate ? new Date(filters.startDate) : null;
     const endDate = filters.endDate ? new Date(filters.endDate) : null;
-    if (startDate && !Number.isNaN(startDate.getTime())) createdAt.$gte = startDate;
+    if (startDate && !Number.isNaN(startDate.getTime()))
+      createdAt.$gte = startDate;
     if (endDate && !Number.isNaN(endDate.getTime())) {
       endDate.setUTCHours(23, 59, 59, 999);
       createdAt.$lte = endDate;
@@ -49,9 +54,7 @@ export class OrderService {
     if (Object.keys(createdAt).length) match.createdAt = createdAt;
 
     const basePipeline: PipelineStage[] = [
-      ...(Object.keys(match).length
-        ? [{ $match: match } as PipelineStage.Match]
-        : []),
+      ...(Object.keys(match).length ? [{ $match: match }] : []),
       {
         $lookup: {
           from: 'users',
@@ -65,13 +68,16 @@ export class OrderService {
           ],
           as: 'user',
         },
-      } as PipelineStage.Lookup,
+      },
       { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
     ];
 
     const normalizedSearch = filters.search?.trim();
     if (normalizedSearch) {
-      const escapedSearch = normalizedSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const escapedSearch = normalizedSearch.replace(
+        /[.*+?^${}()|[\]\\]/g,
+        '\\$&',
+      );
       basePipeline.push({
         $match: {
           $or: [
@@ -79,10 +85,18 @@ export class OrderService {
             { 'user.lastName': { $regex: escapedSearch, $options: 'i' } },
             { 'user.email': { $regex: escapedSearch, $options: 'i' } },
             { 'items.productName': { $regex: escapedSearch, $options: 'i' } },
-            { $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: escapedSearch, options: 'i' } } },
+            {
+              $expr: {
+                $regexMatch: {
+                  input: { $toString: '$_id' },
+                  regex: escapedSearch,
+                  options: 'i',
+                },
+              },
+            },
           ],
         },
-      } as PipelineStage.Match);
+      });
     }
 
     const sortDirection = filters.sort === 'asc' ? 1 : -1;
@@ -105,7 +119,9 @@ export class OrderService {
                     },
                   },
                 },
-                { $project: { _id: 1, productName: 1, productType: 1, imgs: 1 } },
+                {
+                  $project: { _id: 1, productName: 1, productType: 1, imgs: 1 },
+                },
               ],
               as: 'productDetails',
             },
@@ -119,7 +135,9 @@ export class OrderService {
               customer: {
                 name: {
                   $trim: {
-                    input: { $concat: ['$user.firstName', ' ', '$user.lastName'] },
+                    input: {
+                      $concat: ['$user.firstName', ' ', '$user.lastName'],
+                    },
                   },
                 },
                 email: '$user.email',
@@ -133,6 +151,7 @@ export class OrderService {
                   in: '$$item.productName',
                 },
               },
+              items: 1,
               productDetails: 1,
               orderDate: '$createdAt',
               totalAmount: 1,
