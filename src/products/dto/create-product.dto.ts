@@ -176,6 +176,15 @@ export class CreateProductDto {
   color?: string[];
 
   @ApiPropertyOptional({
+    description: 'Maps each merchandise color to an index in imgs',
+    example: { '#008000': 0 },
+  })
+  @Transform(parseOptionalObject)
+  @IsObject()
+  @IsOptional()
+  colorImageIndexes?: Record<string, number>;
+
+  @ApiPropertyOptional({
     description: 'Available sizes for the product',
     example: ['s', 'm', 'l'],
   })

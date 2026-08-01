@@ -96,6 +96,9 @@ export class Product {
   @Prop({ type: [String], required: false })
   color?: string[];
 
+  @Prop({ type: Object, required: false })
+  colorImageIndexes?: Record<string, number>;
+
   @Prop({ type: [String], required: false })
   size?: string[];
 
