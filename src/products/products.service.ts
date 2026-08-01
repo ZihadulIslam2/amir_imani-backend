@@ -73,9 +73,7 @@ export class ProductsService {
         ? { previousPrice: dto.previousPrice }
         : {}),
       // Keep this explicit so JSON and multipart product creation both persist it.
-      ...(dto.isPreOrder !== undefined
-        ? { isPreOrder: dto.isPreOrder }
-        : {}),
+      ...(dto.isPreOrder !== undefined ? { isPreOrder: dto.isPreOrder } : {}),
     });
     const savedProduct = await newProduct.save();
 
@@ -111,10 +109,7 @@ export class ProductsService {
   ): Promise<Product[]> {
     const query: FilterQuery<Product> = {};
 
-    if (
-      category &&
-      !Object.values(ProductCategory).includes(category as ProductCategory)
-    ) {
+    if (category && !Object.values(ProductCategory).includes(category)) {
       throw new BadRequestException(
         'Invalid product category. Allowed values are: ALL, APPAREL, ACCESSORIES, PRINTS & POSTERS, STATIONERY, HOME & DECOR, COLLECTIBLES.',
       );
@@ -243,9 +238,7 @@ export class ProductsService {
           ? { previousPrice: dto.previousPrice }
           : {}),
         // Keep this explicit so JSON and multipart product edits both persist it.
-        ...(dto.isPreOrder !== undefined
-          ? { isPreOrder: dto.isPreOrder }
-          : {}),
+        ...(dto.isPreOrder !== undefined ? { isPreOrder: dto.isPreOrder } : {}),
       },
       $unset: {
         ...(shouldUnsetCategory ? { category: '' } : {}),

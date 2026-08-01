@@ -195,6 +195,12 @@ export class UpdateProductDto {
   @IsString({ each: true })
   size?: string[];
 
+  @ApiPropertyOptional({ description: 'Stock quantity for each merchandise size', example: [{ size: 'm', quantity: 20 }] })
+  @Transform(parseOptionalArray)
+  @IsArray()
+  @IsOptional()
+  sizeStocks?: { size: string; quantity: number }[];
+
   @ApiPropertyOptional({
     description: 'Stock quantity of the product',
     example: 100,

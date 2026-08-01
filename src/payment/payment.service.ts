@@ -88,6 +88,8 @@ export class PaymentService {
           );
         }
 
+        this.assertSizeAvailability(product, item.size, item.quantity);
+
         const usdPrice = Number(product.price);
         const cadPrice = Number(product.ca_price);
         const hasUsdPrice = Number.isFinite(usdPrice) && usdPrice > 0;
@@ -161,6 +163,15 @@ export class PaymentService {
       if (items.length === 0) {
         throw new BadRequestException('No valid products in cart');
       }
+    }
+
+    // Re-check selected size stock for both direct checkout and cart checkout.
+    for (const item of items) {
+      const product = await this.productModel.findById(item.productId).lean();
+      if (!product) {
+        throw new BadRequestException(`Product with ID ${item.productId} was not found`);
+      }
+      this.assertSizeAvailability(product, item.size, item.quantity);
     }
 
     // 2. Determine currency: shipping country → geo-IP fallback → default USD
@@ -314,6 +325,8 @@ export class PaymentService {
 
     if (!payment || payment.paymentStatus === 'paid') return;
 
+    await this.decrementSizeStocks(payment.items);
+
     payment.paymentStatus = 'paid';
     payment.orderStatus = 'processing';
     await payment.save();
@@ -376,6 +389,58 @@ export class PaymentService {
     payment.paymentStatus = 'failed';
     payment.orderStatus = 'failed';
     await payment.save();
+  }
+
+  private assertSizeAvailability(
+    product: Product,
+    size: string | undefined,
+    quantity: number,
+  ) {
+    if (!size || !product.sizeStocks?.length) return;
+    const sizeStock = product.sizeStocks.find((item) => item.size === size);
+    if (!sizeStock || sizeStock.quantity < quantity) {
+      throw new BadRequestException(
+        `${size.toUpperCase()} is out of stock for ${product.productName}`,
+      );
+    }
+  }
+
+  private async decrementSizeStocks(
+    items: Array<{ productId: string; size?: string; quantity: number }>,
+  ) {
+    const requested = new Map<
+      string,
+      { productId: string; size: string; quantity: number }
+    >();
+    for (const item of items) {
+      if (!item.size) continue;
+      const key = `${item.productId}:${item.size}`;
+      const current = requested.get(key);
+      requested.set(key, {
+        productId: item.productId,
+        size: item.size,
+        quantity: (current?.quantity || 0) + item.quantity,
+      });
+    }
+
+    for (const item of requested.values()) {
+      const product = await this.productModel.findById(item.productId).lean();
+      if (!product?.sizeStocks?.length) continue;
+      const result = await this.productModel.updateOne(
+        {
+          _id: item.productId,
+          sizeStocks: {
+            $elemMatch: { size: item.size, quantity: { $gte: item.quantity } },
+          },
+        },
+        { $inc: { 'sizeStocks.$.quantity': -item.quantity } },
+      );
+      if (result.modifiedCount !== 1) {
+        throw new BadRequestException(
+          `${item.size.toUpperCase()} is no longer available for ${product.productName}`,
+        );
+      }
+    }
   }
 
   private buildConfirmationHtml(

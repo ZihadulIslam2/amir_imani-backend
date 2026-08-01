@@ -48,6 +48,11 @@ export interface InTheBox {
   boxnumbers: BoxNumber[];
 }
 
+export interface SizeStock {
+  size: string;
+  quantity: number;
+}
+
 @Schema({ timestamps: true })
 export class Product {
   @Prop({ required: true })
@@ -101,6 +106,9 @@ export class Product {
 
   @Prop({ type: [String], required: false })
   size?: string[];
+
+  @Prop({ type: [{ size: String, quantity: Number }], required: false })
+  sizeStocks?: SizeStock[];
 
   @Prop({ required: false, default: 0 })
   quantity?: number;
