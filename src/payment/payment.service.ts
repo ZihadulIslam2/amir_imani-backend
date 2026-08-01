@@ -165,13 +165,20 @@ export class PaymentService {
       }
     }
 
-    // Re-check selected size stock for both direct checkout and cart checkout.
+    // Re-check selected size stock for both direct checkout and cart checkout,
+    // and derive the order type from the authoritative product records.
+    let containsPreorderProduct = false;
     for (const item of items) {
       const product = await this.productModel.findById(item.productId).lean();
       if (!product) {
         throw new BadRequestException(`Product with ID ${item.productId} was not found`);
       }
+      containsPreorderProduct ||= Boolean(product.isPreOrder);
       this.assertSizeAvailability(product, item.size, item.quantity);
+    }
+    const orderType = containsPreorderProduct ? 'preorder' : 'order';
+    if (dto.orderType && dto.orderType !== orderType) {
+      throw new BadRequestException('Order type does not match the selected products');
     }
 
     // 2. Determine currency: shipping country → geo-IP fallback → default USD
@@ -242,6 +249,7 @@ export class PaymentService {
       currency,
       metadata: {
         userId: dto.userId,
+        orderType,
       },
       shipping: {
         name: '',
@@ -273,6 +281,7 @@ export class PaymentService {
       discountAmount,
       paymentStatus: 'pending',
       orderStatus: 'pending',
+      orderType,
     });
 
     // 8. Return coupon info for client

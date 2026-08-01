@@ -90,6 +90,9 @@ export class PaymentRecord {
 
   @Prop({ default: 'pending' })
   orderStatus: string;
+
+  @Prop({ type: String, enum: ['order', 'preorder'], default: 'order' })
+  orderType: 'order' | 'preorder';
 }
 
 export const PaymentSchema = SchemaFactory.createForClass(PaymentRecord);

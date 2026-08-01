@@ -162,6 +162,7 @@ export class OrderService {
               shippingAddress: 1,
               paymentStatus: 1,
               orderStatus: 1,
+              orderType: 1,
             },
           },
         ])
@@ -185,7 +186,7 @@ export class OrderService {
     const orders = await this.paymentModel
       .find({ userId })
       .select(
-        '_id items totalAmount currency subtotal shippingCost discountAmount paymentStatus orderStatus createdAt shippingAddress',
+        '_id items totalAmount currency subtotal shippingCost discountAmount paymentStatus orderStatus orderType createdAt shippingAddress',
       )
       .sort({ createdAt: -1 })
       .lean()

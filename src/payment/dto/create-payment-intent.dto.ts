@@ -3,6 +3,7 @@ import {
   IsOptional,
   IsNumber,
   IsEmail,
+  IsIn,
   Min,
   IsArray,
   IsMongoId,
@@ -98,4 +99,13 @@ export class CreatePaymentIntentDto {
   @IsOptional()
   @IsString()
   couponCode?: string;
+
+  @ApiPropertyOptional({
+    description: 'Whether this checkout is a regular order or a preorder',
+    enum: ['order', 'preorder'],
+    example: 'preorder',
+  })
+  @IsOptional()
+  @IsIn(['order', 'preorder'])
+  orderType?: 'order' | 'preorder';
 }
