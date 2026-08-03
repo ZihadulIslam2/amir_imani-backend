@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsString,
   IsObject,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import {
@@ -59,6 +60,28 @@ const parseOptionalObject = ({ value }: { value: unknown }) => {
 
   return undefined;
 };
+
+class ColorSizeStockSizeDto {
+  @IsString()
+  @IsNotEmpty()
+  size: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  quantity: number;
+}
+
+class ColorSizeStockDto {
+  @IsString()
+  @IsNotEmpty()
+  color: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ColorSizeStockSizeDto)
+  sizes: ColorSizeStockSizeDto[];
+}
 
 export class CreateProductDto {
   @ApiProperty({
@@ -194,11 +217,33 @@ export class CreateProductDto {
   @IsString({ each: true })
   size?: string[];
 
-  @ApiPropertyOptional({ description: 'Stock quantity for each merchandise size', example: [{ size: 'm', quantity: 20 }] })
+  @ApiPropertyOptional({
+    description: 'Stock quantity for each merchandise size',
+    example: [{ size: 'm', quantity: 20 }],
+  })
   @Transform(parseOptionalArray)
   @IsArray()
   @IsOptional()
   sizeStocks?: { size: string; quantity: number }[];
+
+  @ApiPropertyOptional({
+    description: 'Stock quantities grouped by merchandise color and size',
+    example: [
+      {
+        color: '#FF0000',
+        sizes: [
+          { size: 'l', quantity: 10 },
+          { size: 'xl', quantity: 0 },
+        ],
+      },
+    ],
+  })
+  @Transform(parseOptionalArray)
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ColorSizeStockDto)
+  @IsOptional()
+  colorSizeStocks?: ColorSizeStockDto[];
 
   @ApiPropertyOptional({
     description: 'Stock quantity of the product',

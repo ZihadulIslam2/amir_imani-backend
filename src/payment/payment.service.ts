@@ -12,6 +12,10 @@ import { EmailService } from '../email/email.service';
 import { UserService } from '../user/user.service';
 import { CouponService } from '../coupons/coupon.service';
 import { Product, ProductDocument } from '../products/product.schema';
+import {
+  findColorSizeStock,
+  usesColorSizeStock,
+} from '../products/color-size-stock';
 
 @Injectable()
 export class PaymentService {
@@ -88,7 +92,12 @@ export class PaymentService {
           );
         }
 
-        this.assertSizeAvailability(product, item.size, item.quantity);
+        this.assertVariantAvailability(
+          product,
+          item.color,
+          item.size,
+          item.quantity,
+        );
 
         const usdPrice = Number(product.price);
         const cadPrice = Number(product.ca_price);
@@ -171,14 +180,23 @@ export class PaymentService {
     for (const item of items) {
       const product = await this.productModel.findById(item.productId).lean();
       if (!product) {
-        throw new BadRequestException(`Product with ID ${item.productId} was not found`);
+        throw new BadRequestException(
+          `Product with ID ${item.productId} was not found`,
+        );
       }
       containsPreorderProduct ||= Boolean(product.isPreOrder);
-      this.assertSizeAvailability(product, item.size, item.quantity);
+      this.assertVariantAvailability(
+        product,
+        item.color,
+        item.size,
+        item.quantity,
+      );
     }
     const orderType = containsPreorderProduct ? 'preorder' : 'order';
     if (dto.orderType && dto.orderType !== orderType) {
-      throw new BadRequestException('Order type does not match the selected products');
+      throw new BadRequestException(
+        'Order type does not match the selected products',
+      );
     }
 
     // 2. Determine currency: shipping country → geo-IP fallback → default USD
@@ -334,7 +352,7 @@ export class PaymentService {
 
     if (!payment || payment.paymentStatus === 'paid') return;
 
-    await this.decrementSizeStocks(payment.items);
+    await this.decrementVariantStocks(payment.items);
 
     payment.paymentStatus = 'paid';
     payment.orderStatus = 'processing';
@@ -400,11 +418,28 @@ export class PaymentService {
     await payment.save();
   }
 
-  private assertSizeAvailability(
+  private assertVariantAvailability(
     product: Product,
+    color: string | undefined,
     size: string | undefined,
     quantity: number,
   ) {
+    if (usesColorSizeStock(product)) {
+      if (!color || !size) {
+        throw new BadRequestException(
+          `Please select a color and size for ${product.productName}`,
+        );
+      }
+
+      const variantStock = findColorSizeStock(product, color, size);
+      if (!variantStock || variantStock.quantity < quantity) {
+        throw new BadRequestException(
+          `${color} ${size.toUpperCase()} is out of stock for ${product.productName}`,
+        );
+      }
+      return;
+    }
+
     if (!size || !product.sizeStocks?.length) return;
     const sizeStock = product.sizeStocks.find((item) => item.size === size);
     if (!sizeStock || sizeStock.quantity < quantity) {
@@ -414,19 +449,25 @@ export class PaymentService {
     }
   }
 
-  private async decrementSizeStocks(
-    items: Array<{ productId: string; size?: string; quantity: number }>,
+  private async decrementVariantStocks(
+    items: Array<{
+      productId: string;
+      color?: string;
+      size?: string;
+      quantity: number;
+    }>,
   ) {
     const requested = new Map<
       string,
-      { productId: string; size: string; quantity: number }
+      { productId: string; color?: string; size: string; quantity: number }
     >();
     for (const item of items) {
       if (!item.size) continue;
-      const key = `${item.productId}:${item.size}`;
+      const key = `${item.productId}:${item.color || ''}:${item.size}`;
       const current = requested.get(key);
       requested.set(key, {
         productId: item.productId,
+        color: item.color,
         size: item.size,
         quantity: (current?.quantity || 0) + item.quantity,
       });
@@ -434,19 +475,57 @@ export class PaymentService {
 
     for (const item of requested.values()) {
       const product = await this.productModel.findById(item.productId).lean();
-      if (!product?.sizeStocks?.length) continue;
-      const result = await this.productModel.updateOne(
-        {
-          _id: item.productId,
-          sizeStocks: {
-            $elemMatch: { size: item.size, quantity: { $gte: item.quantity } },
-          },
-        },
-        { $inc: { 'sizeStocks.$.quantity': -item.quantity } },
-      );
+      if (!product) continue;
+      const result = usesColorSizeStock(product)
+        ? await this.productModel.updateOne(
+            {
+              _id: item.productId,
+              colorSizeStocks: {
+                $elemMatch: {
+                  color: item.color,
+                  sizes: {
+                    $elemMatch: {
+                      size: item.size,
+                      quantity: { $gte: item.quantity },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $inc: {
+                'colorSizeStocks.$[color].sizes.$[size].quantity':
+                  -item.quantity,
+              },
+            },
+            {
+              arrayFilters: [
+                { 'color.color': item.color },
+                {
+                  'size.size': item.size,
+                  'size.quantity': { $gte: item.quantity },
+                },
+              ],
+            },
+          )
+        : product.sizeStocks?.length
+          ? await this.productModel.updateOne(
+              {
+                _id: item.productId,
+                sizeStocks: {
+                  $elemMatch: {
+                    size: item.size,
+                    quantity: { $gte: item.quantity },
+                  },
+                },
+              },
+              { $inc: { 'sizeStocks.$.quantity': -item.quantity } },
+            )
+          : undefined;
+      if (!result) continue;
       if (result.modifiedCount !== 1) {
         throw new BadRequestException(
-          `${item.size.toUpperCase()} is no longer available for ${product.productName}`,
+          `${item.color ? `${item.color} ` : ''}${item.size.toUpperCase()} is no longer available for ${product.productName}`,
         );
       }
     }

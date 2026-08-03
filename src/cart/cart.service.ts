@@ -6,12 +6,21 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Cart, CartDocument } from './cart.schema';
+import { Product, ProductDocument } from '../products/product.schema';
+import {
+  findColorSizeStock,
+  usesColorSizeStock,
+} from '../products/color-size-stock';
 import { CreateCartDto } from './dto/create-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
 
 @Injectable()
 export class CartService {
-  constructor(@InjectModel(Cart.name) private cartModel: Model<CartDocument>) {}
+  constructor(
+    @InjectModel(Cart.name) private cartModel: Model<CartDocument>,
+    @InjectModel(Product.name)
+    private productModel: Model<ProductDocument>,
+  ) {}
 
   async createCart(dto: CreateCartDto): Promise<Cart> {
     // console.log('first', dto);
@@ -50,6 +59,7 @@ export class CartService {
           }
         });
 
+        await this.assertItemsAvailable(existingCart.productIds);
         return await existingCart.save();
       }
 
@@ -59,6 +69,7 @@ export class CartService {
         productIds: newItems,
       });
 
+      await this.assertItemsAvailable(newCart.productIds);
       return await newCart.save();
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -83,16 +94,19 @@ export class CartService {
 
   async updateCart(userId: string, dto: UpdateCartDto): Promise<Cart> {
     try {
+      const productIds = dto.productIds.map((item) => ({
+        productId: new Types.ObjectId(item.productId),
+        quantity: item.quantity,
+        color: item.color,
+        size: item.size,
+      }));
+      await this.assertItemsAvailable(productIds);
+
       const updatedCart = await this.cartModel
         .findOneAndUpdate(
           { userId: new Types.ObjectId(userId) },
           {
-            productIds: dto.productIds.map((item) => ({
-              productId: new Types.ObjectId(item.productId),
-              quantity: item.quantity,
-              color: item.color,
-              size: item.size,
-            })),
+            productIds,
           },
           { new: true },
         )
@@ -171,6 +185,61 @@ export class CartService {
       );
     } catch (error) {
       throw new BadRequestException('Failed to remove product from carts');
+    }
+  }
+
+  private async assertItemsAvailable(
+    items: Array<{
+      productId: Types.ObjectId;
+      quantity: number;
+      color?: string;
+      size?: string;
+    }>,
+  ) {
+    const requested = new Map<
+      string,
+      {
+        productId: Types.ObjectId;
+        quantity: number;
+        color?: string;
+        size?: string;
+      }
+    >();
+
+    for (const item of items) {
+      const key = `${item.productId.toString()}:${item.color || ''}:${item.size || ''}`;
+      const current = requested.get(key);
+      requested.set(key, {
+        ...item,
+        quantity: (current?.quantity || 0) + item.quantity,
+      });
+    }
+
+    for (const item of requested.values()) {
+      const product = await this.productModel.findById(item.productId).lean();
+      if (!product) {
+        throw new BadRequestException('A product in the cart no longer exists');
+      }
+
+      if (usesColorSizeStock(product)) {
+        const stock = findColorSizeStock(product, item.color, item.size);
+        if (!stock || stock.quantity < item.quantity) {
+          throw new BadRequestException(
+            `The selected color and size is out of stock for ${product.productName}`,
+          );
+        }
+        continue;
+      }
+
+      if (!item.size || !product.sizeStocks?.length) continue;
+      const stock = product.sizeStocks.find(
+        (sizeStock) => sizeStock.size === item.size,
+      );
+      if (!stock || stock.quantity < item.quantity) {
+        throw new BadRequestException(
+          `${item.size.toUpperCase()} is out of stock for ${product.productName}`,
+        );
+      }
     }
   }
 }

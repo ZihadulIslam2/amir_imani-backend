@@ -53,6 +53,11 @@ export interface SizeStock {
   quantity: number;
 }
 
+export interface ColorSizeStock {
+  color: string;
+  sizes: SizeStock[];
+}
+
 @Schema({ timestamps: true })
 export class Product {
   @Prop({ required: true })
@@ -109,6 +114,12 @@ export class Product {
 
   @Prop({ type: [{ size: String, quantity: Number }], required: false })
   sizeStocks?: SizeStock[];
+
+  @Prop({
+    type: [{ color: String, sizes: [{ size: String, quantity: Number }] }],
+    required: false,
+  })
+  colorSizeStocks?: ColorSizeStock[];
 
   @Prop({ required: false, default: 0 })
   quantity?: number;
