@@ -5,6 +5,7 @@ import {
   OnModuleInit,
   ForbiddenException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
@@ -38,6 +39,7 @@ export class FortuneTellingService implements OnModuleInit {
     private readonly fortuneDefinitionModel: Model<FortuneDefinitionDocument>,
     @InjectModel(FortuneHistory.name)
     private readonly fortuneHistoryModel: Model<FortuneHistoryDocument>,
+    private readonly configService: ConfigService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -46,14 +48,31 @@ export class FortuneTellingService implements OnModuleInit {
 
   private normalizeSymbolValues(symbols: string[]): string[] {
     if (!Array.isArray(symbols)) {
-      throw new BadRequestException('Fortune symbols must be provided as an array.');
+      throw new BadRequestException(
+        'Fortune symbols must be provided as an array.',
+      );
     }
 
     return symbols.map((symbol) => symbol.trim().toUpperCase());
   }
 
   private normalizeSymbols(symbols: string[]): string {
-    return [...this.normalizeSymbolValues(symbols)].sort().join(',');
+    return [...this.normalizeSymbolValues(symbols)]
+      .map((symbol) => (symbol === 'ZIGGY' ? 'ZIGI' : symbol))
+      .sort()
+      .join(',');
+  }
+
+  private isDailyLimitEnabled(): boolean {
+    const forceDailyLimit = this.configService.get<string>(
+      'FORTUNE_DAILY_LIMIT_ENABLED',
+    );
+
+    if (forceDailyLimit !== undefined) {
+      return forceDailyLimit === 'true';
+    }
+
+    return this.configService.get<string>('NODE_ENV') === 'production';
   }
 
   private async seedFortuneDefinitionsIfNeeded(): Promise<void> {
@@ -76,7 +95,11 @@ export class FortuneTellingService implements OnModuleInit {
     }
 
     const definitions = Object.entries(fortunes).map(([key, entry], index) => {
-      if (!entry || !Array.isArray(entry.symbols) || typeof entry.fortune !== 'string') {
+      if (
+        !entry ||
+        !Array.isArray(entry.symbols) ||
+        typeof entry.fortune !== 'string'
+      ) {
         throw new BadRequestException(
           `Invalid fortune definition for key "${key}" in fortunes.json.`,
         );
@@ -114,17 +137,19 @@ export class FortuneTellingService implements OnModuleInit {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const existingToday = await this.fortuneHistoryModel
-      .findOne({
-        userId,
-        createdAt: { $gte: today, $lt: tomorrow },
-      })
-      .exec();
+    if (this.isDailyLimitEnabled()) {
+      const existingToday = await this.fortuneHistoryModel
+        .findOne({
+          userId,
+          createdAt: { $gte: today, $lt: tomorrow },
+        })
+        .exec();
 
-    if (existingToday) {
-      throw new ForbiddenException(
-        'You have already received your fortune today. Come back tomorrow.',
-      );
+      if (existingToday) {
+        throw new ForbiddenException(
+          'You have already received your fortune today. Come back tomorrow.',
+        );
+      }
     }
 
     const definition = await this.findFortuneDefinitionBySymbols(normalized);
@@ -231,7 +256,9 @@ function resolveFortunesMap(rawData: unknown): FortunesMap {
     return (rawData as { default: FortunesMap }).default;
   }
 
-  throw new Error('Unable to load fortunes.json in the expected object format.');
+  throw new Error(
+    'Unable to load fortunes.json in the expected object format.',
+  );
 }
 
 function isFortunesMap(value: unknown): value is FortunesMap {
