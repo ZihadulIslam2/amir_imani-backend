@@ -79,11 +79,13 @@ export class PaymentService {
     }> = [];
 
     let subtotalUsd = 0;
-    let cartId: string;
+    let cartIds: string[] = [];
     const exchangeRate = parseFloat(process.env.CAD_EXCHANGE_RATE || '1.44');
 
     if (dto.items && dto.items.length > 0) {
-      // Inline items flow: look up product prices, create cart record
+      // Inline checkout is a self-contained order snapshot. Do not append it
+      // to a server cart: the storefront uses a local cart, and an old cart
+      // could contain products that have since been deleted.
       for (const item of dto.items) {
         const product = await this.productModel.findById(item.productId);
         if (!product) {
@@ -127,12 +129,6 @@ export class PaymentService {
 
         subtotalUsd += priceInUsd * item.quantity;
       }
-
-      const cart = await this.cartService.createCart({
-        userId: dto.userId,
-        productIds: dto.items as any,
-      });
-      cartId = (cart as unknown as { _id: string })._id.toString();
     } else {
       // Existing flow: fetch cart from DB
       let cart;
@@ -146,7 +142,7 @@ export class PaymentService {
         throw new BadRequestException('Cart is empty');
       }
 
-      cartId = (cart as unknown as { _id: string })._id.toString();
+      cartIds = [(cart as unknown as { _id: string })._id.toString()];
 
       for (const cartItem of cart.productIds) {
         const product = cartItem.productId as unknown as {
@@ -287,7 +283,7 @@ export class PaymentService {
     // 7. Save PaymentRecord with full order snapshot
     const payment = await this.paymentModel.create({
       userId: dto.userId,
-      itemIds: [cartId],
+      itemIds: cartIds,
       paymentIntent: paymentIntent.id,
       totalAmount: total / 100,
       currency: paymentIntent.currency,
