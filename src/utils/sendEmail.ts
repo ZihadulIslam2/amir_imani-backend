@@ -1,16 +1,27 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import nodemailer from 'nodemailer';
 
+export type EmailAccountType = 'info' | 'subscribe' | 'orders';
+
 export const sendEmail = async (
   to: string,
   subject: string,
   html: string,
+  accountType: EmailAccountType = 'info',
 ): Promise<void> => {
-  // Use MAIL_* to align with ConfigModule and EmailService
   const host = process.env.MAIL_HOST; // e.g. "smtp.gmail.com"
   const port = Number(process.env.MAIL_PORT) || 587; // 587 = STARTTLS, 465 = SMTPS
-  const user = process.env.MAIL_USER;
-  const pass = process.env.MAIL_PASS;
+  
+  let user = process.env.INFO_MAIL_USER;
+  let pass = process.env.INFO_MAIL_PASS;
+
+  if (accountType === 'subscribe') {
+    user = process.env.SUBSCRIBE_MAIL_USER;
+    pass = process.env.SUBSCRIBE_MAIL_PASS;
+  } else if (accountType === 'orders') {
+    user = process.env.ORDERS_MAIL_USER;
+    pass = process.env.ORDERS_MAIL_PASS;
+  }
 
   let transporter: nodemailer.Transporter;
 

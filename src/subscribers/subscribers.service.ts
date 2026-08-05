@@ -122,6 +122,7 @@ export class SubscribersService {
           subscriber.email,
           dto.messageSubject,
           this.buildNotificationEmail(subscriber, dto),
+          'subscribe',
         ),
       ),
     );

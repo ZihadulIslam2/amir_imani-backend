@@ -20,6 +20,7 @@ export class ContactUsService {
       process.env.ADMIN_EMAIL || 'zihadul708@gmail.com',
       `New Contact Message from ${firstName} ${lastName}`,
       html,
+      'info'
     );
 
     return { message: 'Message sent successfully' };
