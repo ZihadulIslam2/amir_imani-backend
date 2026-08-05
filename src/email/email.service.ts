@@ -9,28 +9,52 @@ import { Email } from './email.schema';
 
 @Injectable()
 export class EmailService {
-  private transporter: nodemailer.Transporter;
+  private infoTransporter: nodemailer.Transporter;
+  private subscribeTransporter: nodemailer.Transporter;
+  private ordersTransporter: nodemailer.Transporter;
 
   constructor(
     private configService: ConfigService,
     @InjectModel(Email.name) private emailModel: Model<Email>,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    this.transporter = nodemailer.createTransport({
-      host: configService.get<string>('MAIL_HOST'),
-      port: configService.get<number>('MAIL_PORT'),
-      secure: false, // true if using 465
+    const host = configService.get<string>('MAIL_HOST');
+    const port = configService.get<number>('MAIL_PORT');
+
+    this.infoTransporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
       auth: {
-        user: configService.get<string>('MAIL_USER'),
-        pass: configService.get<string>('MAIL_PASS'),
+        user: configService.get<string>('INFO_MAIL_USER'),
+        pass: configService.get<string>('INFO_MAIL_PASS'),
+      },
+    });
+
+    this.subscribeTransporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: {
+        user: configService.get<string>('SUBSCRIBE_MAIL_USER'),
+        pass: configService.get<string>('SUBSCRIBE_MAIL_PASS'),
+      },
+    });
+
+    this.ordersTransporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: {
+        user: configService.get<string>('ORDERS_MAIL_USER'),
+        pass: configService.get<string>('ORDERS_MAIL_PASS'),
       },
     });
   }
 
   async sendPasswordMail(to: string, password: string) {
     try {
-      await this.transporter.sendMail({
-        from: `"No Reply" <${process.env.MAIL_USER}>`,
+      await this.infoTransporter.sendMail({
+        from: `"No Reply" <${process.env.INFO_MAIL_USER}>`,
         to,
         subject: 'Your Account Password',
         html: `
@@ -51,8 +75,8 @@ export class EmailService {
   async sendOtpMail(to: string, otp: string) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      await this.transporter.sendMail({
-        from: `"No Reply" <${process.env.MAIL_USER}>`,
+      await this.infoTransporter.sendMail({
+        from: `"No Reply" <${process.env.INFO_MAIL_USER}>`,
         to,
         subject: 'Password Reset OTP',
         html: `
@@ -88,7 +112,7 @@ export class EmailService {
         <p><strong>Email:</strong> ${dto.email}</p>
       `;
 
-      await sendEmail(adminEmail, `New submission from ${dto.name}`, html);
+      await sendEmail(adminEmail, `New submission from ${dto.name}`, html, 'info');
 
       return { message: 'Admin notified successfully' };
     } catch (error) {
@@ -344,6 +368,7 @@ export class EmailService {
         data.subscriberEmail,
         `🎉 New Product: ${data.productName}`,
         html,
+        'subscribe'
       );
     } catch (error) {
       console.error('Error sending product notification email:', error);
@@ -360,8 +385,8 @@ export class EmailService {
   ) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      await this.transporter.sendMail({
-        from: `"Dound Games" <${process.env.MAIL_USER}>`,
+      await this.ordersTransporter.sendMail({
+        from: `"Dound Games" <${process.env.ORDERS_MAIL_USER}>`,
         to: email,
         subject: 'Payment Confirmation - Your Order is Confirmed',
         html,
