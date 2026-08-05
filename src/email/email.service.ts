@@ -54,7 +54,7 @@ export class EmailService {
   async sendPasswordMail(to: string, password: string) {
     try {
       await this.infoTransporter.sendMail({
-        from: `"No Reply" <${process.env.INFO_MAIL_USER}>`,
+        from: `"No Reply" <${this.configService.get<string>('INFO_MAIL_USER')}>`,
         to,
         subject: 'Your Account Password',
         html: `
@@ -76,7 +76,7 @@ export class EmailService {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       await this.infoTransporter.sendMail({
-        from: `"No Reply" <${process.env.INFO_MAIL_USER}>`,
+        from: `"No Reply" <${this.configService.get<string>('INFO_MAIL_USER')}>`,
         to,
         subject: 'Password Reset OTP',
         html: `
@@ -94,7 +94,7 @@ export class EmailService {
   }
 
   async notifyAdmin(dto: NotifyAdminDto) {
-    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
     if (!adminEmail) {
       throw new InternalServerErrorException('ADMIN_EMAIL is not configured');
     }
@@ -345,7 +345,7 @@ export class EmailService {
                     <div class="description-text">${data.description}</div>
                   </div>
 
-                  <a href="${process.env.FRONTEND_URL || 'https://yourstore.com'}" class="cta-button">Shop Now</a>
+                  <a href="${this.configService.get<string>('FRONTEND_URL') || 'https://yourstore.com'}" class="cta-button">Shop Now</a>
                 </div>
               </div>
 
@@ -386,7 +386,7 @@ export class EmailService {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       await this.ordersTransporter.sendMail({
-        from: `"Dound Games" <${process.env.ORDERS_MAIL_USER}>`,
+        from: `"Dound Games" <${this.configService.get<string>('ORDERS_MAIL_USER')}>`,
         to: email,
         subject: 'Payment Confirmation - Your Order is Confirmed',
         html,

@@ -50,7 +50,7 @@ export const sendEmail = async (
     });
   } else {
     throw new Error(
-      'Email configuration is missing. Set MAIL_HOST, MAIL_PORT, MAIL_USER, MAIL_PASS.',
+      `Email configuration is missing for ${accountType}. Check your .env file for the respective MAIL_USER and MAIL_PASS variables.`,
     );
   }
 
