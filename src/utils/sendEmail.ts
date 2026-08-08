@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import nodemailer from 'nodemailer';
 
-export type EmailAccountType = 'info' | 'subscribe' | 'orders';
+export type EmailAccountType =
+  | 'info'
+  | 'subscribe'
+  | 'orders'
+  | 'noreply'
+  | 'support';
 
 export const sendEmail = async (
   to: string,
@@ -9,31 +14,71 @@ export const sendEmail = async (
   html: string,
   accountType: EmailAccountType = 'info',
 ): Promise<void> => {
-  const host = process.env.MAIL_HOST; // e.g. "smtp.gmail.com"
-  const port = Number(process.env.MAIL_PORT) || 587; // 587 = STARTTLS, 465 = SMTPS
-  
-  let user = process.env.INFO_MAIL_USER;
-  let pass = process.env.INFO_MAIL_PASS;
+  const host = process.env.MAIL_HOST || 'smtp.gmail.com';
+  const port = Number(process.env.MAIL_PORT) || 587;
 
-  if (accountType === 'subscribe') {
-    user = process.env.SUBSCRIBE_MAIL_USER;
-    pass = process.env.SUBSCRIBE_MAIL_PASS;
-  } else if (accountType === 'orders') {
-    user = process.env.ORDERS_MAIL_USER;
-    pass = process.env.ORDERS_MAIL_PASS;
+  // Primary credentials used for authenticating with SMTP server if alias-specific pass is not set
+  const primaryAuthUser =
+    process.env.MAIL_USER ||
+    process.env.INFO_MAIL_USER ||
+    'info@doundogames.com';
+  const primaryAuthPass =
+    process.env.MAIL_PASS ||
+    process.env.INFO_MAIL_PASS ||
+    process.env.SUBSCRIBE_MAIL_PASS ||
+    process.env.ORDERS_MAIL_PASS ||
+    '';
+
+  let aliasAddress = primaryAuthUser;
+  let accountPass = primaryAuthPass;
+  let senderName = 'Doundo Games';
+
+  switch (accountType) {
+    case 'noreply':
+      aliasAddress =
+        process.env.NO_REPLY_MAIL_USER || 'no-reply@doundogames.com';
+      accountPass = process.env.NO_REPLY_MAIL_PASS || primaryAuthPass;
+      senderName = 'Doundo Games No-Reply';
+      break;
+    case 'subscribe':
+      aliasAddress =
+        process.env.SUBSCRIBE_MAIL_USER || 'subscribe@doundogames.com';
+      accountPass = process.env.SUBSCRIBE_MAIL_PASS || primaryAuthPass;
+      senderName = 'Doundo Games Newsletter';
+      break;
+    case 'support':
+      aliasAddress =
+        process.env.SUPPORT_MAIL_USER || 'support@doundogames.com';
+      accountPass = process.env.SUPPORT_MAIL_PASS || primaryAuthPass;
+      senderName = 'Doundo Games Support';
+      break;
+    case 'orders':
+      aliasAddress =
+        process.env.ORDERS_MAIL_USER || 'orders@doundogames.com';
+      accountPass = process.env.ORDERS_MAIL_PASS || primaryAuthPass;
+      senderName = 'Doundo Games Orders';
+      break;
+    case 'info':
+    default:
+      aliasAddress =
+        process.env.INFO_MAIL_USER || primaryAuthUser || 'info@doundogames.com';
+      accountPass = process.env.INFO_MAIL_PASS || primaryAuthPass;
+      senderName = 'Doundo Games';
+      break;
   }
+
+  // SMTP Authentication credentials (use alias credentials if defined, otherwise fallback to primary auth)
+  const authUser = accountPass ? aliasAddress : primaryAuthUser;
+  const authPass = accountPass || primaryAuthPass;
 
   let transporter: nodemailer.Transporter;
 
-  // Use real SMTP if configured; otherwise fall back to Ethereal in non-production
-  if (host && user && pass) {
+  if (host && authUser && authPass) {
     transporter = nodemailer.createTransport({
       host,
       port,
-      // SMTPS (implicit TLS) only on 465; 587 uses STARTTLS
       secure: port === 465,
-      auth: { user, pass },
-      // Enforce STARTTLS when using 587
+      auth: { user: authUser, pass: authPass },
       requireTLS: port === 587,
     });
   } else if (process.env.NODE_ENV !== 'production') {
@@ -50,18 +95,17 @@ export const sendEmail = async (
     });
   } else {
     throw new Error(
-      `Email configuration is missing for ${accountType}. Check your .env file for the respective MAIL_USER and MAIL_PASS variables.`,
+      `Email configuration is missing for ${accountType}. Check your .env file for MAIL_USER and MAIL_PASS variables.`,
     );
   }
 
   const info = await transporter.sendMail({
-    from: user ? `"Website Contact" <${user}>` : 'noreply@example.com',
+    from: `"${senderName}" <${aliasAddress}>`,
     to,
     subject,
     html,
   });
 
-  // In dev with Ethereal, log preview URL to help debugging
   const previewUrl = nodemailer.getTestMessageUrl(info);
   if (previewUrl) {
     console.log('Email preview URL:', previewUrl);

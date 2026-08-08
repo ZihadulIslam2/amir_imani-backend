@@ -16,6 +16,7 @@ import {
   findColorSizeStock,
   usesColorSizeStock,
 } from '../products/color-size-stock';
+import { getBrandedEmailHtml } from '../utils/getBrandedEmailHtml';
 
 @Injectable()
 export class PaymentService {
@@ -536,54 +537,52 @@ export class PaymentService {
       .map(
         (item) =>
           `<tr>
-            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.productName}${item.color ? ` (${item.color})` : ''}${item.size ? ` - ${item.size}` : ''}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${item.quantity}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">$${item.price.toFixed(2)}</td>
+            <td style="padding: 12px 8px; border-bottom: 1px solid #E5E7EB; color: #1F2937;">${item.productName}${item.color ? ` (${item.color})` : ''}${item.size ? ` - ${item.size}` : ''}</td>
+            <td style="padding: 12px 8px; border-bottom: 1px solid #E5E7EB; text-align: center; color: #4B5563;">${item.quantity}</td>
+            <td style="padding: 12px 8px; border-bottom: 1px solid #E5E7EB; text-align: right; font-weight: 600; color: #1F2937;">$${item.price.toFixed(2)}</td>
           </tr>`,
       )
       .join('');
 
     const currencySymbol = payment.currency === 'cad' ? 'C$' : '$';
 
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
-          .container { max-width: 600px; margin: 20px auto; background: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #4CAF50; padding-bottom: 20px; }
-          .header h1 { color: #4CAF50; margin: 0; }
-          .content { color: #333; line-height: 1.6; }
-          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          th { background: #f9f9f9; padding: 10px 8px; text-align: left; border-bottom: 2px solid #ddd; }
-          .total-row td { font-weight: bold; padding-top: 12px; border-top: 2px solid #333; }
-          .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #999; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header"><h1>✓ Order Confirmed</h1></div>
-          <div class="content">
-            <p>Hi <strong>${firstName} ${lastName}</strong>,</p>
-            <p>Thank you for your order! Your payment has been successfully processed.</p>
-            <table>
-              <thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead>
-              <tbody>${itemsHtml}</tbody>
-              <tfoot>
-                <tr class="total-row"><td colspan="2">Subtotal</td><td style="text-align: right;">${currencySymbol}${payment.subtotal.toFixed(2)}</td></tr>
-                <tr><td colspan="2">Shipping</td><td style="text-align: right;">${payment.shippingCost === 0 ? 'FREE' : currencySymbol + payment.shippingCost.toFixed(2)}</td></tr>
-                <tr style="font-size: 16px; color: #4CAF50;"><td colspan="2"><strong>Total</strong></td><td style="text-align: right;"><strong>${currencySymbol}${payment.totalAmount.toFixed(2)}</strong></td></tr>
-              </tfoot>
-            </table>
-            <p>Shipping to: ${payment.shippingAddress?.street}, ${payment.shippingAddress?.city}, ${payment.shippingAddress?.province} ${payment.shippingAddress?.postalCode}, ${payment.shippingAddress?.country}</p>
-            <p>Your order is now being processed. You will receive a shipping update shortly.</p>
-          </div>
-          <div class="footer"><p>This is an automated message. Please do not reply.</p></div>
-        </div>
-      </body>
-      </html>
+    const innerHtml = `
+      <p style="font-size: 16px; margin-top: 0; color: #1F2937;">Hi <strong>${firstName} ${lastName}</strong>,</p>
+      <p style="color: #4B5563; line-height: 1.6;">Thank you for your purchase! Your payment has been successfully processed and your order is confirmed.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 24px 0;">
+        <thead>
+          <tr style="background-color: #FAF6EE; border-bottom: 2px solid #E5E7EB;">
+            <th style="padding: 10px 8px; text-align: left; font-size: 12px; font-weight: 700; color: #0E1D2B; text-transform: uppercase;">Item</th>
+            <th style="padding: 10px 8px; text-align: center; font-size: 12px; font-weight: 700; color: #0E1D2B; text-transform: uppercase;">Qty</th>
+            <th style="padding: 10px 8px; text-align: right; font-size: 12px; font-weight: 700; color: #0E1D2B; text-transform: uppercase;">Price</th>
+          </tr>
+        </thead>
+        <tbody>${itemsHtml}</tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2" style="padding: 10px 8px; border-top: 1px solid #E5E7EB; color: #4B5563;">Subtotal</td>
+            <td style="padding: 10px 8px; border-top: 1px solid #E5E7EB; text-align: right; font-weight: 600;">${currencySymbol}${payment.subtotal.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding: 10px 8px; color: #4B5563;">Shipping</td>
+            <td style="padding: 10px 8px; text-align: right; font-weight: 600;">${payment.shippingCost === 0 ? 'FREE' : currencySymbol + payment.shippingCost.toFixed(2)}</td>
+          </tr>
+          <tr style="font-size: 17px; font-weight: 700; color: #F04D2A;">
+            <td colspan="2" style="padding: 14px 8px; border-top: 2px solid #0E1D2B;">Total Paid</td>
+            <td style="padding: 14px 8px; border-top: 2px solid #0E1D2B; text-align: right;">${currencySymbol}${payment.totalAmount.toFixed(2)}</td>
+          </tr>
+        </tfoot>
+      </table>
+      <div style="background-color: #FAF6EE; border-left: 4px solid #0EA5B8; padding: 16px; border-radius: 6px; margin: 20px 0;">
+        <p style="margin: 0; font-size: 13px; color: #374151;"><strong>Shipping Address:</strong><br />${payment.shippingAddress?.street}, ${payment.shippingAddress?.city}, ${payment.shippingAddress?.province} ${payment.shippingAddress?.postalCode}, ${payment.shippingAddress?.country}</p>
+      </div>
+      <p style="color: #6B7280; font-size: 14px; margin-bottom: 0;">Your order is being processed and will be shipped soon. Thank you for choosing Doundo Games!</p>
     `;
+
+    return getBrandedEmailHtml({
+      title: 'Order Confirmed ✓',
+      bodyHtml: innerHtml,
+    });
   }
 
   async getAllPayments() {
