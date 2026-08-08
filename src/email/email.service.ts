@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import { sendEmail } from '../utils/sendEmail';
+import { getBrandedEmailHtml } from '../utils/getBrandedEmailHtml';
 import { NotifyAdminDto } from './dto/notify-admin.dto';
 import { Email } from './email.schema';
 
@@ -53,19 +54,23 @@ export class EmailService {
 
   async sendPasswordMail(to: string, password: string) {
     try {
-      await this.infoTransporter.sendMail({
-        from: `"No Reply" <${this.configService.get<string>('INFO_MAIL_USER')}>`,
-        to,
-        subject: 'Your Account Password',
-        html: `
-          <div>
-            <h3>Welcome! Your account has been created.</h3>
-            <p>Here is your auto-generated password:</p>
-            <p style="font-size: 20px; font-weight: bold;">${password}</p>
-            <p>Please change your password after logging in for security purposes.</p>
+      const contentHtml = `
+        <div style="background-color: #FAF6EE; border-left: 4px solid #F04D2A; padding: 24px; border-radius: 8px; margin-bottom: 20px;">
+          <h3 style="margin-top: 0; color: #0E1D2B; font-size: 18px;">Welcome to Doundo Games!</h3>
+          <p style="color: #4B5563; margin-bottom: 12px;">Your account has been successfully created. Here is your auto-generated login password:</p>
+          <div style="background-color: #ffffff; border: 1px dashed #F04D2A; padding: 16px; text-align: center; border-radius: 6px; font-size: 24px; font-weight: 700; color: #F04D2A; letter-spacing: 2px; margin: 16px 0;">
+            ${password}
           </div>
-        `,
+          <p style="color: #6B7280; font-size: 13px; margin-bottom: 0;">Please change your password after logging in for security purposes.</p>
+        </div>
+      `;
+
+      const brandedHtml = getBrandedEmailHtml({
+        title: 'Your Account Password',
+        bodyHtml: contentHtml,
       });
+
+      await sendEmail(to, 'Your Account Password', brandedHtml, 'noreply');
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException('Failed to send password email');
@@ -74,19 +79,23 @@ export class EmailService {
 
   async sendOtpMail(to: string, otp: string) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      await this.infoTransporter.sendMail({
-        from: `"No Reply" <${this.configService.get<string>('INFO_MAIL_USER')}>`,
-        to,
-        subject: 'Password Reset OTP',
-        html: `
-          <div>
-            <h3>Your OTP Code</h3>
-            <p style="font-size: 20px; font-weight: bold;">${otp}</p>
-            <p>This OTP will expire in 10 minutes.</p>
+      const contentHtml = `
+        <div style="background-color: #FAF6EE; border-left: 4px solid #0EA5B8; padding: 24px; border-radius: 8px; margin-bottom: 20px;">
+          <h3 style="margin-top: 0; color: #0E1D2B; font-size: 18px;">Password Reset Verification Code</h3>
+          <p style="color: #4B5563; margin-bottom: 12px;">Use the OTP code below to reset your Doundo Games account password:</p>
+          <div style="background-color: #ffffff; border: 2px solid #0EA5B8; padding: 18px; text-align: center; border-radius: 8px; font-size: 28px; font-weight: 700; color: #0E1D2B; letter-spacing: 6px; margin: 20px 0;">
+            ${otp}
           </div>
-        `,
+          <p style="color: #6B7280; font-size: 13px; margin-bottom: 0;">This OTP is valid for <strong>10 minutes</strong>. If you did not request a password reset, please ignore this email.</p>
+        </div>
+      `;
+
+      const brandedHtml = getBrandedEmailHtml({
+        title: 'Password Reset OTP',
+        bodyHtml: contentHtml,
       });
+
+      await sendEmail(to, 'Password Reset OTP', brandedHtml, 'noreply');
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException('Failed to send email');
@@ -100,19 +109,30 @@ export class EmailService {
     }
 
     try {
-      // Save notification data to database
       await this.emailModel.create({
         name: dto.name,
         email: dto.email,
       });
 
-      const html = `
-        <h2>New user details</h2>
-        <p><strong>Name:</strong> ${dto.name}</p>
-        <p><strong>Email:</strong> ${dto.email}</p>
+      const contentHtml = `
+        <div style="background-color: #FAF6EE; border-left: 4px solid #0EA5B8; padding: 20px; border-radius: 6px;">
+          <h3 style="margin-top: 0; color: #0E1D2B; font-size: 18px;">New User Submission</h3>
+          <p style="margin: 8px 0; color: #374151;"><strong>Name:</strong> ${dto.name}</p>
+          <p style="margin: 8px 0; color: #374151;"><strong>Email:</strong> ${dto.email}</p>
+        </div>
       `;
 
-      await sendEmail(adminEmail, `New submission from ${dto.name}`, html, 'info');
+      const brandedHtml = getBrandedEmailHtml({
+        title: 'New Submission Received',
+        bodyHtml: contentHtml,
+      });
+
+      await sendEmail(
+        adminEmail,
+        `New submission from ${dto.name}`,
+        brandedHtml,
+        'info',
+      );
 
       return { message: 'Admin notified successfully' };
     } catch (error) {
@@ -384,13 +404,12 @@ export class EmailService {
     html: string,
   ) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      await this.ordersTransporter.sendMail({
-        from: `"Dound Games" <${this.configService.get<string>('ORDERS_MAIL_USER')}>`,
-        to: email,
-        subject: 'Payment Confirmation - Your Order is Confirmed',
+      await sendEmail(
+        email,
+        'Payment Confirmation - Your Order is Confirmed',
         html,
-      });
+        'orders',
+      );
       console.log(`Payment confirmation email sent successfully to ${email}`);
     } catch (error) {
       console.error(
