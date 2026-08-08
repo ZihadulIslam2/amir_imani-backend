@@ -33,7 +33,7 @@ import { ProductNotificationsModule } from './product-notifications/product-noti
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('DATABASE_URL'),
+        uri: configService.get<string>('DATABASE_URL') || 'mongodb://localhost:27017/amir_imani',
       }),
       inject: [ConfigService],
     }),
