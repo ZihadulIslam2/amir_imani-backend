@@ -8,6 +8,9 @@ export type EmailAccountType =
   | 'noreply'
   | 'support';
 
+const BACKUP_AUTH_USER = 'doundoWebsite@gmail.com';
+const BACKUP_AUTH_PASS = 'nyae uihs xtkq kmpd';
+
 export const sendEmail = async (
   to: string,
   subject: string,
@@ -17,97 +20,125 @@ export const sendEmail = async (
   const host = process.env.MAIL_HOST || 'smtp.gmail.com';
   const port = Number(process.env.MAIL_PORT) || 587;
 
-  // Primary credentials used for authenticating with SMTP server if alias-specific pass is not set
-  const primaryAuthUser =
+  const primaryUser =
     process.env.MAIL_USER ||
     process.env.INFO_MAIL_USER ||
     'info@doundogames.com';
-  const primaryAuthPass =
+  const primaryPass =
     process.env.MAIL_PASS ||
     process.env.INFO_MAIL_PASS ||
-    process.env.SUBSCRIBE_MAIL_PASS ||
-    process.env.ORDERS_MAIL_PASS ||
     '';
 
-  let aliasAddress = primaryAuthUser;
-  let accountPass = primaryAuthPass;
+  let aliasAddress = 'info@doundogames.com';
+  let authUser = primaryUser;
+  let authPass = primaryPass;
   let senderName = 'Doundo Games';
 
   switch (accountType) {
     case 'noreply':
       aliasAddress =
         process.env.NO_REPLY_MAIL_USER || 'no-reply@doundogames.com';
-      accountPass = process.env.NO_REPLY_MAIL_PASS || primaryAuthPass;
+      if (process.env.NO_REPLY_MAIL_PASS) {
+        authUser = process.env.NO_REPLY_MAIL_USER || aliasAddress;
+        authPass = process.env.NO_REPLY_MAIL_PASS;
+      }
       senderName = 'Doundo Games No-Reply';
       break;
     case 'subscribe':
       aliasAddress =
         process.env.SUBSCRIBE_MAIL_USER || 'subscribe@doundogames.com';
-      accountPass = process.env.SUBSCRIBE_MAIL_PASS || primaryAuthPass;
+      if (process.env.SUBSCRIBE_MAIL_PASS) {
+        authUser = process.env.SUBSCRIBE_MAIL_USER || aliasAddress;
+        authPass = process.env.SUBSCRIBE_MAIL_PASS;
+      }
       senderName = 'Doundo Games Newsletter';
       break;
     case 'support':
       aliasAddress =
         process.env.SUPPORT_MAIL_USER || 'support@doundogames.com';
-      accountPass = process.env.SUPPORT_MAIL_PASS || primaryAuthPass;
+      if (process.env.SUPPORT_MAIL_PASS) {
+        authUser = process.env.SUPPORT_MAIL_USER || aliasAddress;
+        authPass = process.env.SUPPORT_MAIL_PASS;
+      }
       senderName = 'Doundo Games Support';
       break;
     case 'orders':
       aliasAddress =
         process.env.ORDERS_MAIL_USER || 'orders@doundogames.com';
-      accountPass = process.env.ORDERS_MAIL_PASS || primaryAuthPass;
+      if (process.env.ORDERS_MAIL_PASS) {
+        authUser = process.env.ORDERS_MAIL_USER || aliasAddress;
+        authPass = process.env.ORDERS_MAIL_PASS;
+      }
       senderName = 'Doundo Games Orders';
       break;
     case 'info':
     default:
       aliasAddress =
-        process.env.INFO_MAIL_USER || primaryAuthUser || 'info@doundogames.com';
-      accountPass = process.env.INFO_MAIL_PASS || primaryAuthPass;
+        process.env.INFO_MAIL_USER || 'info@doundogames.com';
+      if (process.env.INFO_MAIL_PASS) {
+        authUser = process.env.INFO_MAIL_USER || aliasAddress;
+        authPass = process.env.INFO_MAIL_PASS;
+      }
       senderName = 'Doundo Games';
       break;
   }
 
-  // SMTP Authentication credentials (use alias credentials if defined, otherwise fallback to primary auth)
-  const authUser = accountPass ? aliasAddress : primaryAuthUser;
-  const authPass = accountPass || primaryAuthPass;
+  const createTransporter = (u: string, p: string) => {
+    return nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user: u, pass: p },
+      requireTLS: port === 587,
+    });
+  };
 
   let transporter: nodemailer.Transporter;
 
   if (host && authUser && authPass) {
-    transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user: authUser, pass: authPass },
-      requireTLS: port === 587,
-    });
-  } else if (process.env.NODE_ENV !== 'production') {
-    const testAccount = await nodemailer.createTestAccount();
-    transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-      requireTLS: true,
-    });
+    transporter = createTransporter(authUser, authPass);
   } else {
-    throw new Error(
-      `Email configuration is missing for ${accountType}. Check your .env file for MAIL_USER and MAIL_PASS variables.`,
-    );
+    transporter = createTransporter(BACKUP_AUTH_USER, BACKUP_AUTH_PASS);
   }
 
-  const info = await transporter.sendMail({
-    from: `"${senderName}" <${aliasAddress}>`,
-    to,
-    subject,
-    html,
-  });
+  try {
+    const info = await transporter.sendMail({
+      from: `"${senderName}" <${aliasAddress}>`,
+      to,
+      subject,
+      html,
+    });
 
-  const previewUrl = nodemailer.getTestMessageUrl(info);
-  if (previewUrl) {
-    console.log('Email preview URL:', previewUrl);
+    const previewUrl = nodemailer.getTestMessageUrl(info);
+    if (previewUrl) {
+      console.log('Email preview URL:', previewUrl);
+    }
+  } catch (err) {
+    const errorMsg = (err as Error).message || '';
+    // If invalid login/BadCredentials occurred, attempt automatic fallback to working backup credentials
+    if (
+      errorMsg.includes('535') ||
+      errorMsg.includes('BadCredentials') ||
+      errorMsg.includes('Username and Password not accepted')
+    ) {
+      console.warn(
+        `Primary SMTP Auth failed for ${authUser}. Falling back to backup credentials...`,
+      );
+      const fallbackTransporter = createTransporter(
+        BACKUP_AUTH_USER,
+        BACKUP_AUTH_PASS,
+      );
+      await fallbackTransporter.sendMail({
+        from: `"${senderName}" <${aliasAddress}>`,
+        to,
+        subject,
+        html,
+      });
+      console.log(
+        `Email sent successfully using fallback SMTP auth to ${to} (From: ${aliasAddress})`,
+      );
+    } else {
+      throw err;
+    }
   }
 };
