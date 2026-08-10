@@ -24,7 +24,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24.12.0
+          node-version: 22.23.2
           cache: npm
 
       - name: Install dependencies
@@ -61,7 +61,7 @@ jobs:
 
             export NVM_DIR=/root/.nvm
             . "$NVM_DIR/nvm.sh"
-            nvm use 24.12.0 >/dev/null
+            nvm use 22.23.2 >/dev/null
 
             cd /var/www/server
             test -f .env
