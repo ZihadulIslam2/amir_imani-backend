@@ -1,7 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import { sendEmail } from '../utils/sendEmail';
 import { getBrandedEmailHtml } from '../utils/getBrandedEmailHtml';
@@ -10,47 +9,10 @@ import { Email } from './email.schema';
 
 @Injectable()
 export class EmailService {
-  private infoTransporter: nodemailer.Transporter;
-  private subscribeTransporter: nodemailer.Transporter;
-  private ordersTransporter: nodemailer.Transporter;
-
   constructor(
     private configService: ConfigService,
     @InjectModel(Email.name) private emailModel: Model<Email>,
-  ) {
-    const host = configService.get<string>('MAIL_HOST');
-    const port = configService.get<number>('MAIL_PORT');
-
-    this.infoTransporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: {
-        user: configService.get<string>('INFO_MAIL_USER'),
-        pass: configService.get<string>('INFO_MAIL_PASS'),
-      },
-    });
-
-    this.subscribeTransporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: {
-        user: configService.get<string>('SUBSCRIBE_MAIL_USER'),
-        pass: configService.get<string>('SUBSCRIBE_MAIL_PASS'),
-      },
-    });
-
-    this.ordersTransporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: {
-        user: configService.get<string>('ORDERS_MAIL_USER'),
-        pass: configService.get<string>('ORDERS_MAIL_PASS'),
-      },
-    });
-  }
+  ) {}
 
   async sendPasswordMail(to: string, password: string) {
     try {
@@ -103,11 +65,6 @@ export class EmailService {
   }
 
   async notifyAdmin(dto: NotifyAdminDto) {
-    const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
-    if (!adminEmail) {
-      throw new InternalServerErrorException('ADMIN_EMAIL is not configured');
-    }
-
     try {
       await this.emailModel.create({
         name: dto.name,
@@ -128,7 +85,7 @@ export class EmailService {
       });
 
       await sendEmail(
-        adminEmail,
+        'info@dundogames.com',
         `New submission from ${dto.name}`,
         brandedHtml,
         'info',
@@ -418,6 +375,31 @@ export class EmailService {
       );
       throw new InternalServerErrorException(
         'Failed to send payment confirmation email',
+      );
+    }
+  }
+
+  async sendPaymentNotificationEmail(
+    firstName: string,
+    lastName: string,
+    amount: number,
+    paymentId: string,
+    html: string,
+  ) {
+    try {
+      await sendEmail(
+        'orders@dundogames.com',
+        `New paid order ${paymentId} — ${firstName} ${lastName} ($${amount.toFixed(2)})`,
+        html,
+        'orders',
+      );
+    } catch (error) {
+      console.error(
+        `Failed to send order notification email for ${paymentId}:`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        'Failed to send order notification email',
       );
     }
   }

@@ -8,9 +8,6 @@ export type EmailAccountType =
   | 'noreply'
   | 'support';
 
-const BACKUP_AUTH_USER = 'doundoWebsite@gmail.com';
-const BACKUP_AUTH_PASS = 'nyae uihs xtkq kmpd';
-
 export const sendEmail = async (
   to: string,
   subject: string,
@@ -93,52 +90,22 @@ export const sendEmail = async (
     });
   };
 
-  let transporter: nodemailer.Transporter;
-
-  if (host && authUser && authPass) {
-    transporter = createTransporter(authUser, authPass);
-  } else {
-    transporter = createTransporter(BACKUP_AUTH_USER, BACKUP_AUTH_PASS);
+  if (!authUser || !authPass) {
+    throw new Error(
+      `Email configuration is missing for the ${accountType} mailbox. Configure its SMTP username and password.`,
+    );
   }
 
-  try {
-    const info = await transporter.sendMail({
-      from: `"${senderName}" <${aliasAddress}>`,
-      to,
-      subject,
-      html,
-    });
+  const transporter = createTransporter(authUser, authPass);
+  const info = await transporter.sendMail({
+    from: `"${senderName}" <${aliasAddress}>`,
+    to,
+    subject,
+    html,
+  });
 
-    const previewUrl = nodemailer.getTestMessageUrl(info);
-    if (previewUrl) {
-      console.log('Email preview URL:', previewUrl);
-    }
-  } catch (err) {
-    const errorMsg = (err as Error).message || '';
-    // If invalid login/BadCredentials occurred, attempt automatic fallback to working backup credentials
-    if (
-      errorMsg.includes('535') ||
-      errorMsg.includes('BadCredentials') ||
-      errorMsg.includes('Username and Password not accepted')
-    ) {
-      console.warn(
-        `Primary SMTP Auth failed for ${authUser}. Falling back to backup credentials...`,
-      );
-      const fallbackTransporter = createTransporter(
-        BACKUP_AUTH_USER,
-        BACKUP_AUTH_PASS,
-      );
-      await fallbackTransporter.sendMail({
-        from: `"${senderName}" <${aliasAddress}>`,
-        to,
-        subject,
-        html,
-      });
-      console.log(
-        `Email sent successfully using fallback SMTP auth to ${to} (From: ${aliasAddress})`,
-      );
-    } else {
-      throw err;
-    }
+  const previewUrl = nodemailer.getTestMessageUrl(info);
+  if (previewUrl) {
+    console.log('Email preview URL:', previewUrl);
   }
 };

@@ -36,7 +36,7 @@ export class SubscribersService {
       ...(dto.releaseDate ? { releaseDate: new Date(dto.releaseDate) } : {}),
     };
 
-    return this.subscriberModel
+    const subscriber = await this.subscriberModel
       .findOneAndUpdate(
         { email: normalizedEmail },
         {
@@ -53,6 +53,15 @@ export class SubscribersService {
         },
       )
       .exec();
+
+    await sendEmail(
+      'subscribe@dundogames.com',
+      'New newsletter subscription',
+      this.buildSubscriptionNotificationEmail(subscriber),
+      'subscribe',
+    );
+
+    return subscriber;
   }
 
   async getAllSubscribers(): Promise<Subscriber[]> {
@@ -239,6 +248,25 @@ export class SubscribersService {
       bodyHtml: innerHtml,
       ctaText: 'Visit Doundo Games',
       ctaUrl: frontendUrl,
+    });
+  }
+
+  private buildSubscriptionNotificationEmail(subscriber: Subscriber): string {
+    const name = subscriber.subscriberName || 'Not provided';
+    const game = subscriber.game || 'General newsletter';
+    const category = subscriber.gameCategory || 'Not provided';
+
+    return getBrandedEmailHtml({
+      title: 'New Newsletter Subscription',
+      bodyHtml: `
+        <p style="margin:0 0 16px;font-size:16px;color:#1F2937;">A visitor has subscribed to Doundo Games updates.</p>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;border:1px solid #e5e7eb;">
+          <tr><td style="padding:12px;background:#FAF6EE;font-weight:600;">Name</td><td style="padding:12px;">${name}</td></tr>
+          <tr><td style="padding:12px;background:#FAF6EE;font-weight:600;">Email</td><td style="padding:12px;">${subscriber.email}</td></tr>
+          <tr><td style="padding:12px;background:#FAF6EE;font-weight:600;">Game</td><td style="padding:12px;">${game}</td></tr>
+          <tr><td style="padding:12px;background:#FAF6EE;font-weight:600;">Category</td><td style="padding:12px;">${category}</td></tr>
+        </table>
+      `,
     });
   }
 
