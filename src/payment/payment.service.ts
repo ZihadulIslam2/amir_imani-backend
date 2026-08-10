@@ -386,6 +386,13 @@ export class PaymentService {
           payment._id.toString(),
           confirmationHtml,
         );
+        await this.emailService.sendPaymentNotificationEmail(
+          user.firstName,
+          user.lastName,
+          payment.totalAmount,
+          payment._id.toString(),
+          confirmationHtml,
+        );
       }
     } catch (error) {
       console.error('Failed to send confirmation email:', error);

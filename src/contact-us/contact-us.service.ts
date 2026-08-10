@@ -27,7 +27,7 @@ export class ContactUsService {
     });
 
     await sendEmail(
-      process.env.ADMIN_EMAIL || 'zihadul708@gmail.com',
+      'support@dundogames.com',
       `New Contact Message from ${firstName} ${lastName}`,
       brandedHtml,
       'support',
