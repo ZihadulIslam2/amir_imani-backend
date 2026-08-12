@@ -85,7 +85,7 @@ export class EmailService {
       });
 
       await sendEmail(
-        'info@dundogames.com',
+        process.env.ADMIN_NOTIFICATION_RECIPIENT || 'info@dundogames.com',
         `New submission from ${dto.name}`,
         brandedHtml,
         'info',
@@ -345,7 +345,7 @@ export class EmailService {
         data.subscriberEmail,
         `🎉 New Product: ${data.productName}`,
         html,
-        'subscribe'
+        'subscribe',
       );
     } catch (error) {
       console.error('Error sending product notification email:', error);
@@ -388,7 +388,7 @@ export class EmailService {
   ) {
     try {
       await sendEmail(
-        'orders@dundogames.com',
+        process.env.ORDER_NOTIFICATION_RECIPIENT || 'orders@dundogames.com',
         `New paid order ${paymentId} — ${firstName} ${lastName} ($${amount.toFixed(2)})`,
         html,
         'orders',

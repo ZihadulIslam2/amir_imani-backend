@@ -1,12 +1,100 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import nodemailer from 'nodemailer';
 
 export type EmailAccountType =
-  | 'info'
-  | 'subscribe'
-  | 'orders'
-  | 'noreply'
-  | 'support';
+  'info' | 'subscribe' | 'orders' | 'noreply' | 'support';
+
+type MailboxConfig = {
+  from: string;
+  name: string;
+  replyTo?: string;
+  authUser: string;
+  authPass: string;
+};
+
+const DEFAULT_MAIL_DOMAIN = 'dundogames.com';
+
+const required = (value: string | undefined, key: string): string => {
+  if (!value?.trim()) {
+    throw new Error(`Email configuration is missing: ${key}.`);
+  }
+  return value.trim();
+};
+
+const address = (value: string | undefined, fallback: string): string =>
+  (value || fallback).trim().toLowerCase();
+
+/**
+ * Gmail authorizes a "Send mail as" alias against the account used to log in to
+ * SMTP. The operations aliases must therefore all authenticate as Operations,
+ * never as an individual alias or another mailbox.
+ */
+const getMailboxConfig = (accountType: EmailAccountType): MailboxConfig => {
+  const amirUser = process.env.AMIR_MAIL_USER || process.env.INFO_MAIL_USER;
+  const amirPass = process.env.AMIR_MAIL_PASS || process.env.INFO_MAIL_PASS;
+  const operationsUser = process.env.OPERATIONS_MAIL_USER;
+  const operationsPass = process.env.OPERATIONS_MAIL_PASS;
+
+  const infoAddress = address(
+    process.env.INFO_MAIL_ADDRESS || process.env.INFO_MAIL_USER,
+    `info@${DEFAULT_MAIL_DOMAIN}`,
+  );
+  const supportAddress = address(
+    process.env.SUPPORT_MAIL_ADDRESS || process.env.SUPPORT_MAIL_USER,
+    `support@${DEFAULT_MAIL_DOMAIN}`,
+  );
+
+  if (accountType === 'info') {
+    return {
+      from: infoAddress,
+      name: process.env.INFO_MAIL_NAME || 'DOUNDO Games',
+      replyTo: address(process.env.INFO_REPLY_TO, infoAddress),
+      authUser: required(amirUser, 'AMIR_MAIL_USER'),
+      authPass: required(amirPass, 'AMIR_MAIL_PASS'),
+    };
+  }
+
+  const operationMailboxes: Record<
+    Exclude<EmailAccountType, 'info'>,
+    Omit<MailboxConfig, 'authUser' | 'authPass'>
+  > = {
+    noreply: {
+      from: address(
+        process.env.NO_REPLY_MAIL_ADDRESS,
+        `no-reply@${DEFAULT_MAIL_DOMAIN}`,
+      ),
+      name: process.env.NO_REPLY_MAIL_NAME || 'DOUNDO Games',
+      // A no-reply sender should still provide customers with a working route.
+      replyTo: address(process.env.NO_REPLY_REPLY_TO, supportAddress),
+    },
+    subscribe: {
+      from: address(
+        process.env.SUBSCRIBE_MAIL_ADDRESS,
+        `subscribe@${DEFAULT_MAIL_DOMAIN}`,
+      ),
+      name: process.env.SUBSCRIBE_MAIL_NAME || 'DOUNDO Games Newsletter',
+      replyTo: address(process.env.SUBSCRIBE_REPLY_TO, supportAddress),
+    },
+    support: {
+      from: supportAddress,
+      name: process.env.SUPPORT_MAIL_NAME || 'DOUNDO Games Support',
+      replyTo: address(process.env.SUPPORT_REPLY_TO, supportAddress),
+    },
+    orders: {
+      from: address(
+        process.env.ORDERS_MAIL_ADDRESS,
+        `orders@${DEFAULT_MAIL_DOMAIN}`,
+      ),
+      name: process.env.ORDERS_MAIL_NAME || 'DOUNDO Games Orders',
+      replyTo: address(process.env.ORDERS_REPLY_TO, supportAddress),
+    },
+  };
+
+  return {
+    ...operationMailboxes[accountType],
+    authUser: required(operationsUser, 'OPERATIONS_MAIL_USER'),
+    authPass: required(operationsPass, 'OPERATIONS_MAIL_PASS'),
+  };
+};
 
 export const sendEmail = async (
   to: string,
@@ -14,98 +102,30 @@ export const sendEmail = async (
   html: string,
   accountType: EmailAccountType = 'info',
 ): Promise<void> => {
+  if (!to?.trim()) {
+    throw new Error('A recipient email address is required.');
+  }
+
   const host = process.env.MAIL_HOST || 'smtp.gmail.com';
   const port = Number(process.env.MAIL_PORT) || 587;
-
-  const primaryUser =
-    process.env.MAIL_USER ||
-    process.env.INFO_MAIL_USER ||
-    'info@doundogames.com';
-  const primaryPass =
-    process.env.MAIL_PASS ||
-    process.env.INFO_MAIL_PASS ||
-    '';
-
-  let aliasAddress = 'info@doundogames.com';
-  let authUser = primaryUser;
-  let authPass = primaryPass;
-  let senderName = 'Doundo Games';
-
-  switch (accountType) {
-    case 'noreply':
-      aliasAddress =
-        process.env.NO_REPLY_MAIL_USER || 'no-reply@doundogames.com';
-      if (process.env.NO_REPLY_MAIL_PASS) {
-        authUser = process.env.NO_REPLY_MAIL_USER || aliasAddress;
-        authPass = process.env.NO_REPLY_MAIL_PASS;
-      }
-      senderName = 'Doundo Games No-Reply';
-      break;
-    case 'subscribe':
-      aliasAddress =
-        process.env.SUBSCRIBE_MAIL_USER || 'subscribe@doundogames.com';
-      if (process.env.SUBSCRIBE_MAIL_PASS) {
-        authUser = process.env.SUBSCRIBE_MAIL_USER || aliasAddress;
-        authPass = process.env.SUBSCRIBE_MAIL_PASS;
-      }
-      senderName = 'Doundo Games Newsletter';
-      break;
-    case 'support':
-      aliasAddress =
-        process.env.SUPPORT_MAIL_USER || 'support@doundogames.com';
-      if (process.env.SUPPORT_MAIL_PASS) {
-        authUser = process.env.SUPPORT_MAIL_USER || aliasAddress;
-        authPass = process.env.SUPPORT_MAIL_PASS;
-      }
-      senderName = 'Doundo Games Support';
-      break;
-    case 'orders':
-      aliasAddress =
-        process.env.ORDERS_MAIL_USER || 'orders@doundogames.com';
-      if (process.env.ORDERS_MAIL_PASS) {
-        authUser = process.env.ORDERS_MAIL_USER || aliasAddress;
-        authPass = process.env.ORDERS_MAIL_PASS;
-      }
-      senderName = 'Doundo Games Orders';
-      break;
-    case 'info':
-    default:
-      aliasAddress =
-        process.env.INFO_MAIL_USER || 'info@doundogames.com';
-      if (process.env.INFO_MAIL_PASS) {
-        authUser = process.env.INFO_MAIL_USER || aliasAddress;
-        authPass = process.env.INFO_MAIL_PASS;
-      }
-      senderName = 'Doundo Games';
-      break;
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error('MAIL_PORT must be a valid TCP port.');
   }
 
-  const createTransporter = (u: string, p: string) => {
-    return nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user: u, pass: p },
-      requireTLS: port === 587,
-    });
-  };
+  const mailbox = getMailboxConfig(accountType);
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user: mailbox.authUser, pass: mailbox.authPass },
+    requireTLS: port === 587,
+  });
 
-  if (!authUser || !authPass) {
-    throw new Error(
-      `Email configuration is missing for the ${accountType} mailbox. Configure its SMTP username and password.`,
-    );
-  }
-
-  const transporter = createTransporter(authUser, authPass);
-  const info = await transporter.sendMail({
-    from: `"${senderName}" <${aliasAddress}>`,
-    to,
+  await transporter.sendMail({
+    from: `"${mailbox.name.replace(/"/g, '')}" <${mailbox.from}>`,
+    replyTo: mailbox.replyTo,
+    to: to.trim(),
     subject,
     html,
   });
-
-  const previewUrl = nodemailer.getTestMessageUrl(info);
-  if (previewUrl) {
-    console.log('Email preview URL:', previewUrl);
-  }
 };
