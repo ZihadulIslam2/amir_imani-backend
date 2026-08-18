@@ -11,7 +11,7 @@ type MailboxConfig = {
   authPass: string;
 };
 
-const DEFAULT_MAIL_DOMAIN = 'dundogames.com';
+const DEFAULT_MAIL_DOMAIN = 'doundogames.com';
 
 const required = (value: string | undefined, key: string): string => {
   if (!value?.trim()) {

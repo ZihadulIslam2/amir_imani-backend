@@ -56,7 +56,7 @@ export class SubscribersService {
 
     await sendEmail(
       process.env.SUBSCRIPTION_NOTIFICATION_RECIPIENT ||
-        'subscribe@dundogames.com',
+        'subscribe@doundogames.com',
       'New newsletter subscription',
       this.buildSubscriptionNotificationEmail(subscriber),
       'subscribe',

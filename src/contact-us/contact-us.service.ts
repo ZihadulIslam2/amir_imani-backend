@@ -27,7 +27,7 @@ export class ContactUsService {
     });
 
     await sendEmail(
-      process.env.SUPPORT_NOTIFICATION_RECIPIENT || 'support@dundogames.com',
+      process.env.SUPPORT_NOTIFICATION_RECIPIENT || 'support@doundogames.com',
       `New Contact Message from ${firstName} ${lastName}`,
       brandedHtml,
       'support',

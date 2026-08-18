@@ -85,7 +85,7 @@ export class EmailService {
       });
 
       await sendEmail(
-        process.env.ADMIN_NOTIFICATION_RECIPIENT || 'info@dundogames.com',
+        process.env.ADMIN_NOTIFICATION_RECIPIENT || 'info@doundogames.com',
         `New submission from ${dto.name}`,
         brandedHtml,
         'info',
@@ -388,7 +388,7 @@ export class EmailService {
   ) {
     try {
       await sendEmail(
-        process.env.ORDER_NOTIFICATION_RECIPIENT || 'orders@dundogames.com',
+        process.env.ORDER_NOTIFICATION_RECIPIENT || 'orders@doundogames.com',
         `New paid order ${paymentId} — ${firstName} ${lastName} ($${amount.toFixed(2)})`,
         html,
         'orders',
