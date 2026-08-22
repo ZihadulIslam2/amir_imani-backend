@@ -7,7 +7,15 @@ describe('AuthController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-    }).compile();
+      providers: [
+        {
+          provide: 'AuthService',
+          useValue: {},
+        },
+      ],
+    })
+      .useMocker(() => ({}))
+      .compile();
 
     controller = module.get<AuthController>(AuthController);
   });

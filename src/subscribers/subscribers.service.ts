@@ -54,13 +54,28 @@ export class SubscribersService {
       )
       .exec();
 
-    await sendEmail(
-      process.env.SUBSCRIPTION_NOTIFICATION_RECIPIENT ||
-        'subscribe@doundogames.com',
-      'New newsletter subscription',
-      this.buildSubscriptionNotificationEmail(subscriber),
-      'subscribe',
-    );
+    // Send auto-reply confirmation to subscriber and internal notification to admin
+    const emailPromises = [
+      sendEmail(
+        subscriber.email,
+        'Thank You for Subscribing to DOUNDO Games!',
+        this.buildSubscriptionWelcomeEmail(subscriber),
+        'subscribe',
+      ).catch((err) => {
+        console.error(`Failed to send subscription confirmation auto-reply to ${subscriber.email}:`, err);
+      }),
+      sendEmail(
+        process.env.SUBSCRIPTION_NOTIFICATION_RECIPIENT ||
+          'subscribe@doundogames.com',
+        'New newsletter subscription',
+        this.buildSubscriptionNotificationEmail(subscriber),
+        'subscribe',
+      ).catch((err) => {
+        console.error('Failed to send subscription admin notification email:', err);
+      }),
+    ];
+
+    await Promise.allSettled(emailPromises);
 
     return subscriber;
   }
@@ -247,6 +262,47 @@ export class SubscribersService {
     return getBrandedEmailHtml({
       title: dto.messageSubject,
       bodyHtml: innerHtml,
+      ctaText: 'Visit Doundo Games',
+      ctaUrl: frontendUrl,
+    });
+  }
+
+  private buildSubscriptionWelcomeEmail(subscriber: Subscriber): string {
+    const subscriberName = subscriber.subscriberName || 'there';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://doundogames.com';
+    const unsubscribeUrl = this.buildUnsubscribeUrl(subscriber.email);
+
+    const bodyHtml = `
+      <div style="background-color: #FAF6EE; border-left: 4px solid #F04D2A; padding: 24px; border-radius: 8px; margin-bottom: 24px;">
+        <h3 style="margin-top: 0; color: #0E1D2B; font-size: 18px;">Welcome to the DOUNDO Games Community!</h3>
+        <p style="color: #4B5563; font-size: 15px; line-height: 1.6; margin-bottom: 0;">
+          Hi <strong>${subscriberName}</strong>, thank you for subscribing to stay updated! You will now be among the first to receive updates on upcoming game releases, exclusive previews, community events, and special offers.
+        </p>
+      </div>
+      ${
+        subscriber.game || subscriber.gameCategory
+          ? `
+          <div style="margin: 20px 0; padding: 18px; border: 1px solid #E5E7EB; border-radius: 8px; background-color: #FFFFFF;">
+            <p style="margin: 0 0 10px; font-weight: 700; color: #0E1D2B; font-size: 14px;">Your Subscription Preferences:</p>
+            <p style="margin: 4px 0; color: #4B5563; font-size: 14px;"><strong>Game:</strong> ${subscriber.game || 'All Games'}</p>
+            ${subscriber.gameCategory ? `<p style="margin: 4px 0; color: #4B5563; font-size: 14px;"><strong>Category:</strong> ${subscriber.gameCategory}</p>` : ''}
+          </div>
+          `
+          : ''
+      }
+      <p style="color: #4B5563; font-size: 14px; line-height: 1.6;">
+        We are thrilled to have you with us. If you ever have any questions or feedback, please reach out to us at <a href="mailto:support@doundogames.com" style="color: #0EA5B8; text-decoration: underline;">support@doundogames.com</a>.
+      </p>
+      <div style="margin-top: 28px; padding-top: 16px; border-top: 1px solid #E5E7EB; font-size: 12px; color: #9CA3AF; text-align: center;">
+        You received this email because you subscribed to updates on DOUNDO Games.
+        <br />
+        <a href="${unsubscribeUrl}" style="color: #0EA5B8; text-decoration: underline;">Unsubscribe from these emails</a>
+      </div>
+    `;
+
+    return getBrandedEmailHtml({
+      title: 'Thank You for Subscribing!',
+      bodyHtml,
       ctaText: 'Visit Doundo Games',
       ctaUrl: frontendUrl,
     });

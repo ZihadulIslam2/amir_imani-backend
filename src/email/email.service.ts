@@ -71,7 +71,8 @@ export class EmailService {
         email: dto.email,
       });
 
-      const contentHtml = `
+      // 1. Admin Notification Email
+      const adminContentHtml = `
         <div style="background-color: #FAF6EE; border-left: 4px solid #0EA5B8; padding: 20px; border-radius: 6px;">
           <h3 style="margin-top: 0; color: #0E1D2B; font-size: 18px;">New User Submission</h3>
           <p style="margin: 8px 0; color: #374151;"><strong>Name:</strong> ${dto.name}</p>
@@ -79,17 +80,51 @@ export class EmailService {
         </div>
       `;
 
-      const brandedHtml = getBrandedEmailHtml({
+      const adminBrandedHtml = getBrandedEmailHtml({
         title: 'New Submission Received',
-        bodyHtml: contentHtml,
+        bodyHtml: adminContentHtml,
       });
 
-      await sendEmail(
-        process.env.ADMIN_NOTIFICATION_RECIPIENT || 'info@doundogames.com',
-        `New submission from ${dto.name}`,
-        brandedHtml,
-        'info',
-      );
+      // 2. User Auto-Reply "Thank You" Confirmation Email
+      const userContentHtml = `
+        <div style="background-color: #FAF6EE; border-left: 4px solid #0EA5B8; padding: 24px; border-radius: 8px; margin-bottom: 24px;">
+          <h3 style="margin-top: 0; color: #0E1D2B; font-size: 18px;">Thank You for Reaching Out!</h3>
+          <p style="color: #4B5563; font-size: 15px; line-height: 1.6; margin-bottom: 0;">
+            Hi <strong>${dto.name}</strong>, thank you for contacting DOUNDO Games. We have received your submission and our team will get in touch with you shortly.
+          </p>
+        </div>
+        <p style="color: #6B7280; font-size: 13px; line-height: 1.6;">
+          If you have any further questions or immediate needs, please reach out to us at <a href="mailto:info@doundogames.com" style="color: #0EA5B8; text-decoration: underline;">info@doundogames.com</a>.
+        </p>
+      `;
+
+      const userBrandedHtml = getBrandedEmailHtml({
+        title: 'Thank You for Contacting DOUNDO Games',
+        bodyHtml: userContentHtml,
+        ctaText: 'Visit Doundo Games',
+        ctaUrl: process.env.FRONTEND_URL || 'https://doundogames.com',
+      });
+
+      const emailPromises = [
+        sendEmail(
+          process.env.ADMIN_NOTIFICATION_RECIPIENT || 'info@doundogames.com',
+          `New submission from ${dto.name}`,
+          adminBrandedHtml,
+          'info',
+        ).catch((err) => {
+          console.error('Failed to send admin notification email:', err);
+        }),
+        sendEmail(
+          dto.email,
+          'Thank You for Contacting DOUNDO Games',
+          userBrandedHtml,
+          'info',
+        ).catch((err) => {
+          console.error(`Failed to send info auto-reply confirmation to ${dto.email}:`, err);
+        }),
+      ];
+
+      await Promise.allSettled(emailPromises);
 
       return { message: 'Admin notified successfully' };
     } catch (error) {
