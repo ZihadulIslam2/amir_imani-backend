@@ -369,33 +369,28 @@ export class PaymentService {
       }
     }
 
-    // Send confirmation email
+    // Send order notification email to orders team
     try {
       const user = await this.userService.findById(payment.userId);
-      if (user) {
-        const confirmationHtml = this.buildConfirmationHtml(
-          user.firstName,
-          user.lastName,
-          payment,
-        );
+      const notificationHtml = this.buildOrderNotificationHtml(
+        user,
+        payment,
+        intent,
+      );
 
-        await this.emailService.sendPaymentConfirmationEmail(
-          user.email,
-          user.firstName,
-          payment.totalAmount,
-          payment._id.toString(),
-          confirmationHtml,
-        );
-        await this.emailService.sendPaymentNotificationEmail(
-          user.firstName,
-          user.lastName,
-          payment.totalAmount,
-          payment._id.toString(),
-          confirmationHtml,
-        );
-      }
+      const customerFirstName = user?.firstName || 'Customer';
+      const customerLastName = user?.lastName || '';
+
+      await this.emailService.sendPaymentNotificationEmail(
+        customerFirstName,
+        customerLastName,
+        payment.totalAmount,
+        payment._id.toString(),
+        notificationHtml,
+        payment.currency,
+      );
     } catch (error) {
-      console.error('Failed to send confirmation email:', error);
+      console.error('Failed to send order notification email:', error);
     }
 
     // Delete cart
@@ -535,60 +530,167 @@ export class PaymentService {
     }
   }
 
-  private buildConfirmationHtml(
-    firstName: string,
-    lastName: string,
+  private buildOrderNotificationHtml(
+    user: any,
     payment: PaymentDocument,
+    intent?: Stripe.PaymentIntent,
   ): string {
-    const itemsHtml = payment.items
-      .map(
-        (item) =>
-          `<tr>
-            <td style="padding: 12px 8px; border-bottom: 1px solid #E5E7EB; color: #1F2937;">${item.productName}${item.color ? ` (${item.color})` : ''}${item.size ? ` - ${item.size}` : ''}</td>
-            <td style="padding: 12px 8px; border-bottom: 1px solid #E5E7EB; text-align: center; color: #4B5563;">${item.quantity}</td>
-            <td style="padding: 12px 8px; border-bottom: 1px solid #E5E7EB; text-align: right; font-weight: 600; color: #1F2937;">$${item.price.toFixed(2)}</td>
-          </tr>`,
-      )
+    const currencySymbol = payment.currency === 'cad' ? 'C$' : '$';
+    const currencyCode = (payment.currency || 'usd').toUpperCase();
+    const customerName = user
+      ? `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+        'Guest Customer'
+      : 'Guest Customer';
+    const customerEmail = user?.email || 'N/A';
+    const customerPhone = user?.phoneNum || 'N/A';
+    const orderId = payment._id?.toString() || payment.paymentIntent || 'N/A';
+    const orderDate = (payment as unknown as { createdAt?: Date }).createdAt
+      ? new Date(
+          (payment as unknown as { createdAt: Date }).createdAt,
+        ).toUTCString()
+      : new Date().toUTCString();
+
+    const paymentMethodTypes = intent?.payment_method_types?.length
+      ? intent.payment_method_types.map((t) => t.toUpperCase()).join(', ')
+      : 'CARD / STRIPE';
+    const paymentMethod = `Stripe (${paymentMethodTypes})`;
+    const paymentIntentId = intent?.id || payment.paymentIntent || 'N/A';
+
+    const itemsHtml = (payment.items || [])
+      .map((item) => {
+        const lineTotal = (item.price * item.quantity).toFixed(2);
+        const variantDetails = [
+          item.color ? `Color: <strong>${item.color}</strong>` : '',
+          item.size ? `Size: <strong>${item.size.toUpperCase()}</strong>` : '',
+        ]
+          .filter(Boolean)
+          .join(' | ');
+
+        return `
+          <tr style="border-bottom: 1px solid #E5E7EB;">
+            <td style="padding: 12px 10px; color: #1F2937; vertical-align: top;">
+              <div style="font-weight: 600; font-size: 14px; color: #0E1D2B;">${item.productName}</div>
+              ${variantDetails ? `<div style="font-size: 12px; color: #6B7280; margin-top: 3px;">${variantDetails}</div>` : ''}
+            </td>
+            <td style="padding: 12px 10px; text-align: center; color: #4B5563; font-size: 14px; vertical-align: top;">
+              ${item.quantity}
+            </td>
+            <td style="padding: 12px 10px; text-align: right; color: #4B5563; font-size: 14px; vertical-align: top;">
+              ${currencySymbol}${item.price.toFixed(2)}
+            </td>
+            <td style="padding: 12px 10px; text-align: right; font-weight: 600; color: #0E1D2B; font-size: 14px; vertical-align: top;">
+              ${currencySymbol}${lineTotal}
+            </td>
+          </tr>
+        `;
+      })
       .join('');
 
-    const currencySymbol = payment.currency === 'cad' ? 'C$' : '$';
+    const discountRow =
+      payment.discountAmount && payment.discountAmount > 0
+        ? `<tr>
+            <td colspan="3" style="padding: 8px 10px; color: #16A34A; font-size: 14px;">Discount Applied</td>
+            <td style="padding: 8px 10px; text-align: right; font-weight: 600; color: #16A34A; font-size: 14px;">-${currencySymbol}${payment.discountAmount.toFixed(2)}</td>
+          </tr>`
+        : '';
+
+    const shippingDisplay =
+      payment.shippingCost === 0
+        ? '<span style="color: #16A34A; font-weight: 600;">FREE</span>'
+        : `${currencySymbol}${payment.shippingCost.toFixed(2)}`;
+
+    const street = payment.shippingAddress?.street || 'N/A';
+    const city = payment.shippingAddress?.city || '';
+    const province = payment.shippingAddress?.province || '';
+    const postalCode = payment.shippingAddress?.postalCode || '';
+    const country = payment.shippingAddress?.country || '';
+    const formattedAddress = `${street}<br/>${[city, province, postalCode].filter(Boolean).join(', ')}<br/>${country}`;
 
     const innerHtml = `
-      <p style="font-size: 16px; margin-top: 0; color: #1F2937;">Hi <strong>${firstName} ${lastName}</strong>,</p>
-      <p style="color: #4B5563; line-height: 1.6;">Thank you for your purchase! Your payment has been successfully processed and your order is confirmed.</p>
-      <table style="width: 100%; border-collapse: collapse; margin: 24px 0;">
+      <div style="background-color: #FAF6EE; border-left: 4px solid #0EA5B8; padding: 16px 20px; border-radius: 8px; margin-bottom: 24px;">
+        <p style="margin: 0; font-size: 15px; color: #0E1D2B; font-weight: 600;">
+          🛒 New Paid Order Received
+        </p>
+        <p style="margin: 4px 0 0 0; font-size: 13px; color: #4B5563;">
+          A customer has completed payment. Full details are below for processing and fulfillment.
+        </p>
+      </div>
+
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; border-collapse: separate; border-spacing: 12px 0;">
+        <tr>
+          <td width="50%" style="vertical-align: top; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px;">
+            <h4 style="margin: 0 0 10px 0; font-size: 13px; text-transform: uppercase; color: #6B7280; letter-spacing: 0.05em;">Customer Details</h4>
+            <p style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: #0E1D2B;">${customerName}</p>
+            <p style="margin: 0 0 4px 0; font-size: 13px; color: #4B5563;">
+              <a href="mailto:${customerEmail}" style="color: #0EA5B8; text-decoration: none;">${customerEmail}</a>
+            </p>
+            <p style="margin: 0; font-size: 13px; color: #4B5563;">Phone: ${customerPhone}</p>
+            <p style="margin: 6px 0 0 0; font-size: 11px; color: #9CA3AF;">User ID: ${payment.userId || 'N/A'}</p>
+          </td>
+          <td width="50%" style="vertical-align: top; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px;">
+            <h4 style="margin: 0 0 10px 0; font-size: 13px; text-transform: uppercase; color: #6B7280; letter-spacing: 0.05em;">Payment & Order Meta</h4>
+            <p style="margin: 0 0 4px 0; font-size: 13px; color: #374151;">
+              <strong>Order ID:</strong> <span style="font-family: monospace; font-size: 12px;">${orderId}</span>
+            </p>
+            <p style="margin: 0 0 4px 0; font-size: 13px; color: #374151;">
+              <strong>Type:</strong> <span style="text-transform: capitalize; font-weight: 600; color: ${payment.orderType === 'preorder' ? '#F04D2A' : '#0EA5B8'};">${payment.orderType || 'order'}</span>
+            </p>
+            <p style="margin: 0 0 4px 0; font-size: 13px; color: #374151;">
+              <strong>Payment Method:</strong> ${paymentMethod}
+            </p>
+            <p style="margin: 0 0 4px 0; font-size: 13px; color: #374151;">
+              <strong>Payment Intent:</strong> <span style="font-family: monospace; font-size: 11px;">${paymentIntentId}</span>
+            </p>
+            <p style="margin: 0 0 4px 0; font-size: 13px; color: #374151;">
+              <strong>Payment Status:</strong> <span style="color: #16A34A; font-weight: 600;">PAID</span>
+            </p>
+            <p style="margin: 0; font-size: 12px; color: #6B7280;">Date: ${orderDate}</p>
+          </td>
+        </tr>
+      </table>
+
+      <div style="background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+        <h4 style="margin: 0 0 8px 0; font-size: 13px; text-transform: uppercase; color: #6B7280; letter-spacing: 0.05em;">Shipping Address</h4>
+        <div style="font-size: 14px; color: #1F2937; line-height: 1.5;">
+          ${formattedAddress}
+        </div>
+      </div>
+
+      <h4 style="margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; color: #0E1D2B; letter-spacing: 0.05em;">Order Items</h4>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; border: 1px solid #E5E7EB; border-radius: 8px; overflow: hidden;">
         <thead>
           <tr style="background-color: #FAF6EE; border-bottom: 2px solid #E5E7EB;">
-            <th style="padding: 10px 8px; text-align: left; font-size: 12px; font-weight: 700; color: #0E1D2B; text-transform: uppercase;">Item</th>
-            <th style="padding: 10px 8px; text-align: center; font-size: 12px; font-weight: 700; color: #0E1D2B; text-transform: uppercase;">Qty</th>
-            <th style="padding: 10px 8px; text-align: right; font-size: 12px; font-weight: 700; color: #0E1D2B; text-transform: uppercase;">Price</th>
+            <th style="padding: 12px 10px; text-align: left; font-size: 12px; font-weight: 700; color: #0E1D2B; text-transform: uppercase;">Product</th>
+            <th style="padding: 12px 10px; text-align: center; font-size: 12px; font-weight: 700; color: #0E1D2B; text-transform: uppercase;">Qty</th>
+            <th style="padding: 12px 10px; text-align: right; font-size: 12px; font-weight: 700; color: #0E1D2B; text-transform: uppercase;">Price</th>
+            <th style="padding: 12px 10px; text-align: right; font-size: 12px; font-weight: 700; color: #0E1D2B; text-transform: uppercase;">Total</th>
           </tr>
         </thead>
-        <tbody>${itemsHtml}</tbody>
+        <tbody>
+          ${itemsHtml}
+        </tbody>
         <tfoot>
           <tr>
-            <td colspan="2" style="padding: 10px 8px; border-top: 1px solid #E5E7EB; color: #4B5563;">Subtotal</td>
-            <td style="padding: 10px 8px; border-top: 1px solid #E5E7EB; text-align: right; font-weight: 600;">${currencySymbol}${payment.subtotal.toFixed(2)}</td>
+            <td colspan="3" style="padding: 10px 10px; border-top: 1px solid #E5E7EB; color: #4B5563; font-size: 14px;">Subtotal</td>
+            <td style="padding: 10px 10px; border-top: 1px solid #E5E7EB; text-align: right; font-weight: 600; color: #0E1D2B; font-size: 14px;">${currencySymbol}${payment.subtotal.toFixed(2)}</td>
           </tr>
           <tr>
-            <td colspan="2" style="padding: 10px 8px; color: #4B5563;">Shipping</td>
-            <td style="padding: 10px 8px; text-align: right; font-weight: 600;">${payment.shippingCost === 0 ? 'FREE' : currencySymbol + payment.shippingCost.toFixed(2)}</td>
+            <td colspan="3" style="padding: 8px 10px; color: #4B5563; font-size: 14px;">Shipping Cost</td>
+            <td style="padding: 8px 10px; text-align: right; font-weight: 600; color: #0E1D2B; font-size: 14px;">${shippingDisplay}</td>
           </tr>
-          <tr style="font-size: 17px; font-weight: 700; color: #F04D2A;">
-            <td colspan="2" style="padding: 14px 8px; border-top: 2px solid #0E1D2B;">Total Paid</td>
-            <td style="padding: 14px 8px; border-top: 2px solid #0E1D2B; text-align: right;">${currencySymbol}${payment.totalAmount.toFixed(2)}</td>
+          ${discountRow}
+          <tr style="font-size: 16px; font-weight: 700; background-color: #FAF6EE; color: #F04D2A;">
+            <td colspan="3" style="padding: 14px 10px; border-top: 2px solid #0E1D2B;">Total Paid</td>
+            <td style="padding: 14px 10px; border-top: 2px solid #0E1D2B; text-align: right;">${currencySymbol}${payment.totalAmount.toFixed(2)} <span style="font-size: 12px; font-weight: normal; color: #6B7280;">${currencyCode}</span></td>
           </tr>
         </tfoot>
       </table>
-      <div style="background-color: #FAF6EE; border-left: 4px solid #0EA5B8; padding: 16px; border-radius: 6px; margin: 20px 0;">
-        <p style="margin: 0; font-size: 13px; color: #374151;"><strong>Shipping Address:</strong><br />${payment.shippingAddress?.street}, ${payment.shippingAddress?.city}, ${payment.shippingAddress?.province} ${payment.shippingAddress?.postalCode}, ${payment.shippingAddress?.country}</p>
-      </div>
-      <p style="color: #6B7280; font-size: 14px; margin-bottom: 0;">Your order is being processed and will be shipped soon. Thank you for choosing Doundo Games!</p>
     `;
 
     return getBrandedEmailHtml({
-      title: 'Order Confirmed ✓',
+      title: 'New Order Received',
       bodyHtml: innerHtml,
+      footerText: 'Internal Order Notification — DOUNDO Games Operations',
     });
   }
 

@@ -420,13 +420,20 @@ export class EmailService {
     amount: number,
     paymentId: string,
     html: string,
+    currency = 'usd',
   ) {
     try {
+      const currencySymbol = currency.toLowerCase() === 'cad' ? 'C$' : '$';
+      const customerName =
+        `${firstName || ''} ${lastName || ''}`.trim() || 'Customer';
       await sendEmail(
         process.env.ORDER_NOTIFICATION_RECIPIENT || 'orders@doundogames.com',
-        `New paid order ${paymentId} — ${firstName} ${lastName} ($${amount.toFixed(2)})`,
+        `New Order #${paymentId} — ${customerName} (${currencySymbol}${amount.toFixed(2)} ${currency.toUpperCase()})`,
         html,
         'orders',
+      );
+      console.log(
+        `Order notification email sent successfully for #${paymentId}`,
       );
     } catch (error) {
       console.error(

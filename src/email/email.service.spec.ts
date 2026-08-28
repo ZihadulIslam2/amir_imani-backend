@@ -77,4 +77,22 @@ describe('EmailService', () => {
       'info',
     );
   });
+
+  it('sendPaymentNotificationEmail should send notification to orders@doundogames.com with order details', async () => {
+    await service.sendPaymentNotificationEmail(
+      'Jane',
+      'Doe',
+      75.5,
+      'order-12345',
+      '<div>Order details html</div>',
+      'usd',
+    );
+
+    expect(sendEmailSpy).toHaveBeenCalledWith(
+      'orders@doundogames.com',
+      'New Order #order-12345 — Jane Doe ($75.50 USD)',
+      '<div>Order details html</div>',
+      'orders',
+    );
+  });
 });
