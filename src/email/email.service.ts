@@ -64,6 +64,31 @@ export class EmailService {
     }
   }
 
+  async sendRegistrationOtpMail(to: string, otp: string) {
+    try {
+      const contentHtml = `
+        <div style="background-color: #FAF6EE; border-left: 4px solid #0EA5B8; padding: 24px; border-radius: 8px; margin-bottom: 20px;">
+          <h3 style="margin-top: 0; color: #0E1D2B; font-size: 18px;">Account Verification Code</h3>
+          <p style="color: #4B5563; margin-bottom: 12px;">Welcome to Doundo Games! Use the OTP code below to verify your account:</p>
+          <div style="background-color: #ffffff; border: 2px solid #0EA5B8; padding: 18px; text-align: center; border-radius: 8px; font-size: 28px; font-weight: 700; color: #0E1D2B; letter-spacing: 6px; margin: 20px 0;">
+            ${otp}
+          </div>
+          <p style="color: #6B7280; font-size: 13px; margin-bottom: 0;">This OTP is valid for <strong>10 minutes</strong>. If you did not request this, please ignore this email.</p>
+        </div>
+      `;
+
+      const brandedHtml = getBrandedEmailHtml({
+        title: 'Account Verification OTP',
+        bodyHtml: contentHtml,
+      });
+
+      await sendEmail(to, 'Account Verification OTP', brandedHtml, 'noreply');
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException('Failed to send verification email');
+    }
+  }
+
   async notifyAdmin(dto: NotifyAdminDto) {
     try {
       await this.emailModel.create({

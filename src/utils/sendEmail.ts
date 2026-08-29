@@ -89,10 +89,13 @@ const getMailboxConfig = (accountType: EmailAccountType): MailboxConfig => {
     },
   };
 
+  const authUser = operationsUser || amirUser;
+  const authPass = operationsPass || amirPass;
+
   return {
     ...operationMailboxes[accountType],
-    authUser: required(operationsUser, 'OPERATIONS_MAIL_USER'),
-    authPass: required(operationsPass, 'OPERATIONS_MAIL_PASS'),
+    authUser: required(authUser, 'OPERATIONS_MAIL_USER or AMIR_MAIL_USER'),
+    authPass: required(authPass, 'OPERATIONS_MAIL_PASS or AMIR_MAIL_PASS'),
   };
 };
 
@@ -121,11 +124,42 @@ export const sendEmail = async (
     requireTLS: port === 587,
   });
 
-  await transporter.sendMail({
-    from: `"${mailbox.name.replace(/"/g, '')}" <${mailbox.from}>`,
-    replyTo: mailbox.replyTo,
-    to: to.trim(),
-    subject,
-    html,
-  });
+  try {
+    await transporter.sendMail({
+      from: `"${mailbox.name.replace(/"/g, '')}" <${mailbox.from}>`,
+      replyTo: mailbox.replyTo,
+      to: to.trim(),
+      subject,
+      html,
+    });
+  } catch (err: any) {
+    const amirUser = process.env.AMIR_MAIL_USER || process.env.INFO_MAIL_USER;
+    const amirPass = process.env.AMIR_MAIL_PASS || process.env.INFO_MAIL_PASS;
+    if (
+      (err?.code === 'EAUTH' || err?.responseCode === 535) &&
+      amirUser &&
+      amirPass &&
+      mailbox.authUser !== amirUser
+    ) {
+      console.warn(
+        `SMTP authentication failed for ${mailbox.authUser}. Retrying with fallback account ${amirUser}...`,
+      );
+      const fallbackTransporter = nodemailer.createTransport({
+        host,
+        port,
+        secure: port === 465,
+        auth: { user: amirUser, pass: amirPass },
+        requireTLS: port === 587,
+      });
+      await fallbackTransporter.sendMail({
+        from: `"${mailbox.name.replace(/"/g, '')}" <${mailbox.from}>`,
+        replyTo: mailbox.replyTo,
+        to: to.trim(),
+        subject,
+        html,
+      });
+      return;
+    }
+    throw err;
+  }
 };

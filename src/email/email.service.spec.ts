@@ -95,4 +95,26 @@ describe('EmailService', () => {
       'orders',
     );
   });
+
+  it('sendRegistrationOtpMail should send verification OTP with noreply', async () => {
+    await service.sendRegistrationOtpMail('user@example.com', '654321');
+
+    expect(sendEmailSpy).toHaveBeenCalledWith(
+      'user@example.com',
+      'Account Verification OTP',
+      expect.stringContaining('654321'),
+      'noreply',
+    );
+  });
+
+  it('sendPasswordMail should send generated password with noreply', async () => {
+    await service.sendPasswordMail('user@example.com', 'temp-pass-123');
+
+    expect(sendEmailSpy).toHaveBeenCalledWith(
+      'user@example.com',
+      'Your Account Password',
+      expect.stringContaining('temp-pass-123'),
+      'noreply',
+    );
+  });
 });
