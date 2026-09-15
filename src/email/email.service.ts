@@ -423,7 +423,7 @@ export class EmailService {
     try {
       await sendEmail(
         email,
-        'Payment Confirmation - Your Order is Confirmed',
+        `Order Confirmed — DoUndo #${paymentId}`,
         html,
         'orders',
       );

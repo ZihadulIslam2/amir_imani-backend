@@ -393,6 +393,30 @@ export class PaymentService {
       console.error('Failed to send order notification email:', error);
     }
 
+    // Send order confirmation + purchase receipt email to customer
+    try {
+      const user = await this.userService.findById(payment.userId);
+      const customerEmail = user?.email;
+      if (customerEmail) {
+        const customerFirstName = user?.firstName || 'Customer';
+        const confirmationHtml = this.buildCustomerOrderConfirmationHtml(
+          user,
+          payment,
+          intent,
+        );
+
+        await this.emailService.sendPaymentConfirmationEmail(
+          customerEmail,
+          customerFirstName,
+          payment.totalAmount,
+          payment._id.toString(),
+          confirmationHtml,
+        );
+      }
+    } catch (error) {
+      console.error('Failed to send customer order confirmation email:', error);
+    }
+
     // Delete cart
     if (payment.itemIds && payment.itemIds.length > 0) {
       for (const cartId of payment.itemIds) {
@@ -691,6 +715,205 @@ export class PaymentService {
       title: 'New Order Received',
       bodyHtml: innerHtml,
       footerText: 'Internal Order Notification — DOUNDO Games Operations',
+    });
+  }
+
+  private buildCustomerOrderConfirmationHtml(
+    user: any,
+    payment: PaymentDocument,
+    intent?: Stripe.PaymentIntent,
+  ): string {
+    const currencySymbol = payment.currency === 'cad' ? 'C$' : '$';
+    const currencyCode = (payment.currency || 'usd').toUpperCase();
+    const customerFirstName = user?.firstName || 'Customer';
+    const customerFullName =
+      `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Customer';
+    const orderNumber =
+      payment._id?.toString() || payment.paymentIntent || 'N/A';
+    const orderDate = (payment as unknown as { createdAt?: Date }).createdAt
+      ? new Date(
+          (payment as unknown as { createdAt: Date }).createdAt,
+        ).toUTCString()
+      : new Date().toUTCString();
+
+    const paymentMethodTypes = intent?.payment_method_types?.length
+      ? intent.payment_method_types.map((t) => t.toUpperCase()).join(', ')
+      : 'CARD';
+    const paymentMethod = `Stripe (${paymentMethodTypes})`;
+    const paymentStatus =
+      payment.paymentStatus?.toLowerCase() === 'paid'
+        ? 'Paid'
+        : payment.paymentStatus || 'Paid';
+
+    const itemsHtml = (payment.items || [])
+      .map((item) => {
+        const lineTotal = (item.price * item.quantity).toFixed(2);
+        const variantDetails = [
+          item.color ? `Color: <strong>${item.color}</strong>` : '',
+          item.size ? `Size: <strong>${item.size.toUpperCase()}</strong>` : '',
+        ]
+          .filter(Boolean)
+          .join(' | ');
+
+        return `
+          <tr style="border-bottom: 1px solid #E5E7EB;">
+            <td style="padding: 12px 10px; color: #1F2937; vertical-align: top;">
+              <div style="font-weight: 600; font-size: 14px; color: #0E1D2B;">${item.productName}</div>
+              ${variantDetails ? `<div style="font-size: 12px; color: #6B7280; margin-top: 3px;">${variantDetails}</div>` : ''}
+            </td>
+            <td style="padding: 12px 10px; text-align: center; color: #4B5563; font-size: 14px; vertical-align: top;">
+              ${item.quantity}
+            </td>
+            <td style="padding: 12px 10px; text-align: right; color: #4B5563; font-size: 14px; vertical-align: top;">
+              ${currencySymbol}${item.price.toFixed(2)}
+            </td>
+            <td style="padding: 12px 10px; text-align: right; font-weight: 600; color: #0E1D2B; font-size: 14px; vertical-align: top;">
+              ${currencySymbol}${lineTotal}
+            </td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    const discountRow =
+      payment.discountAmount && payment.discountAmount > 0
+        ? `<tr>
+            <td colspan="3" style="padding: 8px 10px; color: #16A34A; font-size: 14px;">Discount Applied</td>
+            <td style="padding: 8px 10px; text-align: right; font-weight: 600; color: #16A34A; font-size: 14px;">-${currencySymbol}${payment.discountAmount.toFixed(2)}</td>
+          </tr>`
+        : '';
+
+    const shippingDisplay =
+      payment.shippingCost === 0
+        ? '<span style="color: #16A34A; font-weight: 600;">FREE</span>'
+        : `${currencySymbol}${payment.shippingCost.toFixed(2)}`;
+
+    const calculatedTax = Math.max(
+      0,
+      payment.totalAmount -
+        (payment.subtotal +
+          payment.shippingCost -
+          (payment.discountAmount || 0)),
+    );
+    const taxDisplay = `${currencySymbol}${calculatedTax.toFixed(2)}`;
+
+    const street = payment.shippingAddress?.street || 'N/A';
+    const city = payment.shippingAddress?.city || '';
+    const province = payment.shippingAddress?.province || '';
+    const postalCode = payment.shippingAddress?.postalCode || '';
+    const country = payment.shippingAddress?.country || '';
+    const cityProvince = [city, province].filter(Boolean).join(', ');
+
+    const frontendUrl = process.env.FRONTEND_URL || 'https://doundogames.com';
+    const viewOrderUrl = `${frontendUrl}/order/${orderNumber}`;
+
+    const innerHtml = `
+      <p style="margin: 0 0 16px; font-size: 16px; color: #1F2937;">Hi <strong>${customerFirstName}</strong>,</p>
+      <p style="margin: 0 0 10px; font-size: 15px; line-height: 1.6; color: #374151;">
+        Thank you for your order.
+      </p>
+      <p style="margin: 0 0 22px; font-size: 15px; line-height: 1.6; color: #374151;">
+        Your DoUndo order has been successfully confirmed.
+      </p>
+
+      <!-- Order Summary Card -->
+      <div style="background-color: #FAF6EE; border: 1px solid #E5E7EB; border-left: 4px solid #0EA5B8; padding: 18px 20px; border-radius: 8px; margin-bottom: 24px;">
+        <p style="margin: 0 0 6px 0; font-size: 14px; color: #1F2937;"><strong>Order #:</strong> <span style="font-family: monospace; font-size: 13px; color: #0E1D2B;">${orderNumber}</span></p>
+        <p style="margin: 0 0 6px 0; font-size: 14px; color: #1F2937;"><strong>Order Date:</strong> ${orderDate}</p>
+        <p style="margin: 0; font-size: 14px; color: #1F2937;"><strong>Payment Status:</strong> <span style="color: #16A34A; font-weight: 600;">${paymentStatus}</span></p>
+      </div>
+
+      <!-- Items Section -->
+      <h3 style="margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; color: #0E1D2B; letter-spacing: 0.05em;">YOUR ORDER</h3>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; border: 1px solid #E5E7EB; border-radius: 8px; overflow: hidden;">
+        <thead>
+          <tr style="background-color: #FAF6EE; border-bottom: 2px solid #E5E7EB;">
+            <th style="padding: 12px 10px; text-align: left; font-size: 12px; font-weight: 700; color: #0E1D2B; text-transform: uppercase;">Product</th>
+            <th style="padding: 12px 10px; text-align: center; font-size: 12px; font-weight: 700; color: #0E1D2B; text-transform: uppercase;">Qty</th>
+            <th style="padding: 12px 10px; text-align: right; font-size: 12px; font-weight: 700; color: #0E1D2B; text-transform: uppercase;">Price</th>
+            <th style="padding: 12px 10px; text-align: right; font-size: 12px; font-weight: 700; color: #0E1D2B; text-transform: uppercase;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" style="padding: 10px 10px; border-top: 1px solid #E5E7EB; color: #4B5563; font-size: 14px;">Subtotal</td>
+            <td style="padding: 10px 10px; border-top: 1px solid #E5E7EB; text-align: right; font-weight: 600; color: #0E1D2B; font-size: 14px;">${currencySymbol}${payment.subtotal.toFixed(2)}</td>
+          </tr>
+          ${discountRow}
+          <tr>
+            <td colspan="3" style="padding: 8px 10px; color: #4B5563; font-size: 14px;">Shipping</td>
+            <td style="padding: 8px 10px; text-align: right; font-weight: 600; color: #0E1D2B; font-size: 14px;">${shippingDisplay}</td>
+          </tr>
+          <tr>
+            <td colspan="3" style="padding: 8px 10px; color: #4B5563; font-size: 14px;">Tax / HST</td>
+            <td style="padding: 8px 10px; text-align: right; font-weight: 600; color: #0E1D2B; font-size: 14px;">${taxDisplay}</td>
+          </tr>
+          <tr style="font-size: 16px; font-weight: 700; background-color: #FAF6EE; color: #F04D2A;">
+            <td colspan="3" style="padding: 14px 10px; border-top: 2px solid #0E1D2B;">TOTAL PAID</td>
+            <td style="padding: 14px 10px; border-top: 2px solid #0E1D2B; text-align: right;">${currencySymbol}${payment.totalAmount.toFixed(2)} <span style="font-size: 12px; font-weight: normal; color: #6B7280;">${currencyCode}</span></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <!-- Payment & Shipping Details Grid -->
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; border-collapse: separate; border-spacing: 12px 0;">
+        <tr>
+          <td width="50%" style="vertical-align: top; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px;">
+            <h4 style="margin: 0 0 10px 0; font-size: 13px; text-transform: uppercase; color: #0E1D2B; letter-spacing: 0.05em;">PAYMENT</h4>
+            <p style="margin: 0 0 6px 0; font-size: 13px; color: #374151;"><strong>Payment Method:</strong> ${paymentMethod}</p>
+            <p style="margin: 0; font-size: 13px; color: #374151;"><strong>Payment Status:</strong> <span style="color: #16A34A; font-weight: 600;">${paymentStatus}</span></p>
+          </td>
+          <td width="50%" style="vertical-align: top; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px;">
+            <h4 style="margin: 0 0 10px 0; font-size: 13px; text-transform: uppercase; color: #0E1D2B; letter-spacing: 0.05em;">SHIPPING TO</h4>
+            <p style="margin: 0 0 4px 0; font-size: 13px; font-weight: 600; color: #0E1D2B;">${customerFullName}</p>
+            <p style="margin: 0 0 2px 0; font-size: 13px; color: #4B5563;">${street}</p>
+            ${cityProvince ? `<p style="margin: 0 0 2px 0; font-size: 13px; color: #4B5563;">${cityProvince}</p>` : ''}
+            ${postalCode ? `<p style="margin: 0 0 2px 0; font-size: 13px; color: #4B5563;">${postalCode}</p>` : ''}
+            ${country ? `<p style="margin: 0 0 6px 0; font-size: 13px; color: #4B5563;">${country}</p>` : ''}
+            <p style="margin: 6px 0 0 0; font-size: 12px; color: #374151;"><strong>Shipping Method:</strong> Standard Shipping</p>
+          </td>
+        </tr>
+      </table>
+
+      <!-- View Order Button -->
+      <div style="text-align: center; margin: 28px 0;">
+        <a href="${viewOrderUrl}" target="_blank" style="display: inline-block; background-color: #F04D2A; color: #ffffff !important; text-decoration: none; font-weight: 700; font-size: 14px; padding: 14px 36px; border-radius: 6px; letter-spacing: 0.05em; text-transform: uppercase; box-shadow: 0 4px 12px rgba(240,77,42,0.3);">
+          VIEW YOUR ORDER
+        </a>
+      </div>
+
+      <p style="margin: 0 0 14px; font-size: 14px; line-height: 1.6; color: #4B5563;">
+        We’ll send you another email when there is an important update about your order, including shipping and tracking information once your order has shipped.
+      </p>
+      <p style="margin: 0 0 22px; font-size: 14px; line-height: 1.6; color: #4B5563;">
+        If you notice anything incorrect in your order or need assistance, please reply to this email or contact us at <a href="mailto:orders@doundogames.com" style="color: #0EA5B8; text-decoration: underline;">orders@doundogames.com</a>.
+      </p>
+
+      <div style="background-color: #FAF6EE; border-left: 4px solid #F04D2A; padding: 18px 20px; border-radius: 8px; margin: 24px 0;">
+        <p style="margin: 0 0 6px; font-size: 14px; color: #0E1D2B; font-weight: 600;">
+          Thank you for choosing DoUndo Games.
+        </p>
+        <p style="margin: 0 0 10px; font-size: 14px; color: #4B5563;">
+          We’re excited to have DoUndo heading to your table.
+        </p>
+        <p style="margin: 0; font-size: 13px; font-weight: 700; color: #0E1D2B; letter-spacing: 0.02em;">
+          Easy to learn. Difficult to master.<br/>
+          One move changes everything.
+        </p>
+      </div>
+
+      <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #1F2937;">
+        <strong>The DoUndo Games Team</strong><br/>
+        <a href="${frontendUrl}" style="color: #0EA5B8; text-decoration: none;">www.doundogames.com</a>
+      </p>
+    `;
+
+    return getBrandedEmailHtml({
+      title: `Order Confirmed — DoUndo #${orderNumber}`,
+      bodyHtml: innerHtml,
     });
   }
 

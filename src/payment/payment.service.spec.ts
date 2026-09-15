@@ -86,7 +86,7 @@ describe('PaymentService', () => {
     );
   });
 
-  it('handlePaymentSuccess sends order notification email to orders team with full details without customer auto-reply', async () => {
+  it('handlePaymentSuccess sends order notification email to orders team and confirmation email to customer', async () => {
     const payment = {
       _id: 'payment-999',
       userId: 'user-1',
@@ -131,7 +131,7 @@ describe('PaymentService', () => {
       findById: jest.fn().mockResolvedValue(user),
     };
     const emailService = {
-      sendPaymentConfirmationEmail: jest.fn(),
+      sendPaymentConfirmationEmail: jest.fn().mockResolvedValue(undefined),
       sendPaymentNotificationEmail: jest.fn().mockResolvedValue(undefined),
     };
     const productModel = {
@@ -160,7 +160,13 @@ describe('PaymentService', () => {
 
     expect(payment.paymentStatus).toBe('paid');
     expect(payment.orderStatus).toBe('processing');
-    expect(emailService.sendPaymentConfirmationEmail).not.toHaveBeenCalled();
+    expect(emailService.sendPaymentConfirmationEmail).toHaveBeenCalledWith(
+      'alice@example.com',
+      'Alice',
+      50,
+      'payment-999',
+      expect.stringContaining('Your DoUndo order has been successfully confirmed'),
+    );
     expect(emailService.sendPaymentNotificationEmail).toHaveBeenCalledWith(
       'Alice',
       'Smith',

@@ -96,6 +96,23 @@ describe('EmailService', () => {
     );
   });
 
+  it('sendPaymentConfirmationEmail should send confirmation email to customer with order subject', async () => {
+    await service.sendPaymentConfirmationEmail(
+      'customer@example.com',
+      'Jane',
+      75.5,
+      'order-12345',
+      '<div>Customer receipt html</div>',
+    );
+
+    expect(sendEmailSpy).toHaveBeenCalledWith(
+      'customer@example.com',
+      'Order Confirmed — DoUndo #order-12345',
+      '<div>Customer receipt html</div>',
+      'orders',
+    );
+  });
+
   it('sendRegistrationOtpMail should send verification OTP with noreply', async () => {
     await service.sendRegistrationOtpMail('user@example.com', '654321');
 

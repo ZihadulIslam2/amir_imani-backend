@@ -47,8 +47,8 @@ describe('ContactUsService', () => {
     // Auto-reply to customer
     expect(sendEmailSpy).toHaveBeenCalledWith(
       'jane.doe@example.com',
-      'Thank You for Contacting DOUNDO Games Support',
-      expect.stringContaining('Thank You for Reaching Out!'),
+      'We Received Your Message, DoUndo Games',
+      expect.stringContaining('Thank you for contacting DoUndo Games'),
       'support',
     );
   });
