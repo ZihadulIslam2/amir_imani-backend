@@ -89,12 +89,30 @@ export class EmailService {
     }
   }
 
+  private extractFirstName(name?: string): string {
+    if (!name) return 'there';
+    const trimmed = name.trim();
+    if (trimmed.includes(' by ')) {
+      const afterBy = trimmed.split(' by ').pop()?.trim();
+      if (afterBy) {
+        return afterBy.split(' ')[0];
+      }
+    }
+    return trimmed.split(' ')[0] || 'there';
+  }
+
   async notifyAdmin(dto: NotifyAdminDto) {
     try {
       await this.emailModel.create({
         name: dto.name,
         email: dto.email,
       });
+
+      const firstName = this.extractFirstName(dto.name);
+      const frontendUrl = process.env.FRONTEND_URL || 'https://doundogames.com';
+      const downloadUrl =
+        process.env.PRINT_PLAY_DOWNLOAD_URL ||
+        'https://doundogames.com/Print%20_%20Play%20Kit.pdf';
 
       // 1. Admin Notification Email
       const adminContentHtml = `
@@ -110,24 +128,57 @@ export class EmailService {
         bodyHtml: adminContentHtml,
       });
 
-      // 2. User Auto-Reply "Thank You" Confirmation Email
+      // 2. User Auto-Reply "Your DoUndo Print & Play Is Ready" Email
       const userContentHtml = `
-        <div style="background-color: #FAF6EE; border-left: 4px solid #0EA5B8; padding: 24px; border-radius: 8px; margin-bottom: 24px;">
-          <h3 style="margin-top: 0; color: #0E1D2B; font-size: 18px;">Thank You for Reaching Out!</h3>
-          <p style="color: #4B5563; font-size: 15px; line-height: 1.6; margin-bottom: 0;">
-            Hi <strong>${dto.name}</strong>, thank you for contacting DOUNDO Games. We have received your submission and our team will get in touch with you shortly.
+        <p style="margin: 0 0 16px; font-size: 16px; color: #1F2937;">Hi <strong>${firstName}</strong>,</p>
+        <p style="margin: 0 0 14px; font-size: 15px; line-height: 1.6; color: #374151;">
+          Thank you for trying DoUndo.
+        </p>
+        <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.6; color: #374151;">
+          Your DoUndo Print &amp; Play is ready.
+        </p>
+
+        <div style="text-align: center; margin: 28px 0 32px;">
+          <a href="${downloadUrl}" target="_blank" style="display: inline-block; background-color: #F04D2A; color: #ffffff !important; text-decoration: none; font-weight: 700; font-size: 14px; padding: 14px 36px; border-radius: 6px; letter-spacing: 0.05em; text-transform: uppercase; box-shadow: 0 4px 12px rgba(240,77,42,0.3);">
+            DOWNLOAD PRINT &amp; PLAY
+          </a>
+        </div>
+
+        <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #374151;">
+          Print the game, follow the included instructions, choose your opponent, and make your first move.
+        </p>
+
+        <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #374151;">
+          DoUndo is easy to learn, but every game gives you something new to discover. One decision can change your strategy, your opponent's strategy, and sometimes the entire game.
+        </p>
+
+        <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #374151;">
+          Please share your valuable feedback at <a href="${frontendUrl}" style="color: #0EA5B8; text-decoration: underline;">www.doundogames.com</a>, We are eager to hear from you.
+        </p>
+
+        <p style="margin: 0 0 22px; font-size: 15px; line-height: 1.6; color: #374151;">
+          We hope you enjoy playing.
+        </p>
+
+        <div style="background-color: #FAF6EE; border-left: 4px solid #F04D2A; padding: 18px 22px; border-radius: 8px; margin: 24px 0;">
+          <p style="margin: 0 0 6px; font-size: 15px; font-weight: 700; color: #0E1D2B;">
+            Easy to learn. Difficult to master.
+          </p>
+          <p style="margin: 0; font-size: 15px; font-weight: 600; color: #F04D2A; font-style: italic;">
+            One move changes everything.
           </p>
         </div>
-        <p style="color: #6B7280; font-size: 13px; line-height: 1.6;">
-          If you have any further questions or immediate needs, please reach out to us at <a href="mailto:info@doundogames.com" style="color: #0EA5B8; text-decoration: underline;">info@doundogames.com</a>.
+
+        <p style="margin: 0 0 6px; font-size: 15px; line-height: 1.6; color: #374151;">Enjoy the game,</p>
+        <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #1F2937;">
+          <strong>The DoUndo Games Team</strong><br/>
+          <a href="${frontendUrl}" style="color: #0EA5B8; text-decoration: none;">www.doundogames.com</a>
         </p>
       `;
 
       const userBrandedHtml = getBrandedEmailHtml({
-        title: 'Thank You for Contacting DOUNDO Games',
+        title: 'Your DoUndo Print & Play Is Ready',
         bodyHtml: userContentHtml,
-        ctaText: 'Visit Doundo Games',
-        ctaUrl: process.env.FRONTEND_URL || 'https://doundogames.com',
       });
 
       const emailPromises = [
@@ -141,7 +192,7 @@ export class EmailService {
         }),
         sendEmail(
           dto.email,
-          'Thank You for Contacting DOUNDO Games',
+          'Your DoUndo Print & Play Is Ready',
           userBrandedHtml,
           'info',
         ).catch((err) => {

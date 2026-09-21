@@ -72,8 +72,8 @@ describe('EmailService', () => {
     // Auto-reply to user
     expect(sendEmailSpy).toHaveBeenCalledWith(
       'john@example.com',
-      'Thank You for Contacting DOUNDO Games',
-      expect.stringContaining('Thank You for Reaching Out!'),
+      'Your DoUndo Print & Play Is Ready',
+      expect.stringContaining('Your DoUndo Print &amp; Play is ready'),
       'info',
     );
   });
