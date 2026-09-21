@@ -58,7 +58,7 @@ export class SubscribersService {
     const emailPromises = [
       sendEmail(
         subscriber.email,
-        'Welcome to DoUndo Games',
+        'Your DoUndo Print & Play Is Ready',
         this.buildSubscriptionWelcomeEmail(subscriber),
         'subscribe',
       ).catch((err) => {
@@ -271,7 +271,9 @@ export class SubscribersService {
     const rawName = subscriber.subscriberName?.trim();
     const firstName = rawName ? rawName.split(' ')[0] : 'there';
     const frontendUrl = process.env.FRONTEND_URL || 'https://doundogames.com';
-    const discoverUrl = `${frontendUrl}/games`;
+    const downloadUrl =
+      process.env.PRINT_PLAY_DOWNLOAD_URL ||
+      'https://doundogames.com/Print%20_%20Play%20Kit.pdf';
     const unsubscribeUrl = this.buildUnsubscribeUrl(subscriber.email);
     const privacyUrl = `${frontendUrl}/privacy-policy`;
     const preferencesUrl = `${frontendUrl}/email-preferences`;
@@ -279,54 +281,44 @@ export class SubscribersService {
     const bodyHtml = `
       <p style="margin: 0 0 16px; font-size: 16px; color: #1F2937;">Hi <strong>${firstName}</strong>,</p>
       <p style="margin: 0 0 14px; font-size: 15px; line-height: 1.6; color: #374151;">
-        Welcome to DoUndo.
+        Thank you for trying DoUndo.
       </p>
       <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.6; color: #374151;">
-        You're officially on the list, and we're glad you're here.
+        Your DoUndo Print &amp; Play is ready.
       </p>
 
-      <p style="margin: 0 0 12px; font-size: 15px; font-weight: 600; color: #0E1D2B;">
-        As part of the DoUndo community, you'll be among the first to hear about:
+      <div style="text-align: center; margin: 28px 0 32px;">
+        <a href="${downloadUrl}" target="_blank" style="display: inline-block; background-color: #F04D2A; color: #ffffff !important; text-decoration: none; font-weight: 700; font-size: 14px; padding: 14px 36px; border-radius: 6px; letter-spacing: 0.05em; text-transform: uppercase; box-shadow: 0 4px 12px rgba(240,77,42,0.3);">
+          DOWNLOAD PRINT &amp; PLAY
+        </a>
+      </div>
+
+      <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #374151;">
+        Print the game, follow the included instructions, choose your opponent, and make your first move.
       </p>
-      <ul style="margin: 0 0 22px 20px; padding: 0; color: #374151; font-size: 15px; line-height: 1.8;">
-        <li>New releases and important announcements</li>
-        <li>Gameplay news and updates</li>
-        <li>Events and special opportunities</li>
-        <li>Behind-the-scenes updates from DoUndo Games</li>
-        <li>Selected offers and news worth sharing</li>
-      </ul>
+
+      <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #374151;">
+        DoUndo is easy to learn, but every game gives you something new to discover. One decision can change your strategy, your opponent's strategy, and sometimes the entire game.
+      </p>
+
+      <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #374151;">
+        Please share your valuable feedback at <a href="${frontendUrl}" style="color: #0EA5B8; text-decoration: underline;">www.doundogames.com</a>. We are eager to hear from you.
+      </p>
 
       <p style="margin: 0 0 22px; font-size: 15px; line-height: 1.6; color: #374151;">
-        We don't believe in filling your inbox just for the sake of sending another email. When you hear from us, we want there to be a reason to open it.
+        We hope you enjoy playing.
       </p>
 
-      <div style="background-color: #FAF6EE; border-left: 4px solid #F04D2A; padding: 22px 24px; border-radius: 8px; margin: 24px 0;">
-        <p style="margin: 0 0 10px; font-size: 15px; font-weight: 700; color: #0E1D2B;">
-          DoUndo was built around a simple idea:
+      <div style="background-color: #FAF6EE; border-left: 4px solid #F04D2A; padding: 18px 22px; border-radius: 8px; margin: 24px 0;">
+        <p style="margin: 0 0 6px; font-size: 15px; font-weight: 700; color: #0E1D2B;">
+          Easy to learn. Difficult to master.
         </p>
-        <p style="margin: 0 0 12px; font-size: 15px; font-weight: 600; color: #F04D2A; font-style: italic;">
-          One move can change everything.
-        </p>
-        <p style="margin: 0 0 4px; font-size: 14px; color: #4B5563;">One card.</p>
-        <p style="margin: 0 0 4px; font-size: 14px; color: #4B5563;">One decision.</p>
-        <p style="margin: 0 0 12px; font-size: 14px; color: #4B5563;">One unexpected move.</p>
-        <p style="margin: 0 0 14px; font-size: 14px; color: #374151; line-height: 1.5;">
-          And suddenly, the game you thought you understood looks completely different.
-        </p>
-        <p style="margin: 0; font-size: 14px; font-weight: 700; color: #0E1D2B; letter-spacing: 0.02em;">
-          Easy to learn. Difficult to master.<br/>
+        <p style="margin: 0; font-size: 15px; font-weight: 600; color: #F04D2A; font-style: italic;">
           One move changes everything.
         </p>
       </div>
 
-      <div style="text-align: center; margin: 32px 0;">
-        <a href="${discoverUrl}" target="_blank" style="display: inline-block; background-color: #F04D2A; color: #ffffff !important; text-decoration: none; font-weight: 700; font-size: 14px; padding: 14px 36px; border-radius: 6px; letter-spacing: 0.05em; text-transform: uppercase; box-shadow: 0 4px 12px rgba(240,77,42,0.3);">
-          DISCOVER DOUNDO
-        </a>
-      </div>
-
-      <p style="margin: 0 0 6px; font-size: 15px; line-height: 1.6; color: #374151;">Thanks for joining us.</p>
-      <p style="margin: 0 0 18px; font-size: 15px; line-height: 1.6; color: #374151;">See you in the next move,</p>
+      <p style="margin: 0 0 6px; font-size: 15px; line-height: 1.6; color: #374151;">Enjoy the game,</p>
       <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #1F2937;">
         <strong>The DoUndo Games Team</strong><br/>
         <a href="${frontendUrl}" style="color: #0EA5B8; text-decoration: none;">www.doundogames.com</a>
@@ -342,7 +334,7 @@ export class SubscribersService {
     `;
 
     return getBrandedEmailHtml({
-      title: 'Welcome to DoUndo Games',
+      title: 'Your DoUndo Print & Play Is Ready',
       bodyHtml,
     });
   }

@@ -79,8 +79,8 @@ describe('SubscribersService', () => {
     // Auto-reply to subscriber
     expect(sendEmailSpy).toHaveBeenCalledWith(
       'test@example.com',
-      'Welcome to DoUndo Games',
-      expect.stringContaining('Welcome to DoUndo'),
+      'Your DoUndo Print & Play Is Ready',
+      expect.stringContaining('Your DoUndo Print &amp; Play is ready'),
       'subscribe',
     );
 
